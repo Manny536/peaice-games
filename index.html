@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <title>THE CONSCIOUSNESS MIRROR</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #00ffff;
+            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+        #gameCanvas {
+            background: radial-gradient(circle at center, #001122 0%, #000000 100%);
+            cursor: crosshair;
+        }
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            color: #FFD700;
+            font-size: 18px;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        .vibe-meter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            z-index: 1000;
+        }
+        .vibe-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #FF69B4;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .vibe-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF69B4, #FFD700, #00ffff);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+        }
+        .vibe-label {
+            text-align: center;
+            color: #FF69B4;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #FF69B4;
+        }
+        .mirror-meter {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 200px;
+            z-index: 1000;
+        }
+        .mirror-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .mirror-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #ffffff, #FFD700);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+        .mirror-label {
+            text-align: center;
+            color: #FFD700;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        .coherence-readout {
+            position: absolute;
+            top: 20px;
+            left: 260px;
+            z-index: 1000;
+            color: #00ffff;
+            font-size: 16px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #00ffff;
+            font-size: 14px;
+            opacity: 0.8;
+            animation: glow 3s ease-in-out infinite;
+        }
+        .game-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 42px;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255,215,0,0.3);
+            z-index: 500;
+            opacity: 0;
+            animation: titleFade 3s ease-in-out;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+        .level-display {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            color: #00ffff;
+            font-size: 16px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        .mirror-sync-display {
+            position: absolute;
+            top: 130px;
+            left: 20px;
+            color: #FFD700;
+            font-size: 16px;
+            text-shadow: 0 0 10px #FFD700;
+        }
+        @keyframes glow {
+            0%, 100% { opacity: 0.8; text-shadow: 0 0 5px currentColor; }
+            50% { opacity: 1; text-shadow: 0 0 20px currentColor; }
+        }
+        @keyframes titleFade {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        .love-burst {
+            position: absolute;
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            animation: burstExpand 1s ease-out forwards;
+        }
+        .love-burst.violet {
+            background: radial-gradient(circle, rgba(138, 43, 226, 1) 0%, rgba(255, 105, 180, 0.8) 50%, transparent 70%);
+        }
+        .love-burst.emerald {
+            background: radial-gradient(circle, rgba(50, 205, 50, 1) 0%, rgba(0, 255, 127, 0.8) 50%, transparent 70%);
+        }
+        .love-burst.sapphire {
+            background: radial-gradient(circle, rgba(30, 144, 255, 1) 0%, rgba(0, 191, 255, 0.8) 50%, transparent 70%);
+        }
+        .love-burst.ruby {
+            background: radial-gradient(circle, rgba(220, 20, 60, 1) 0%, rgba(255, 69, 0, 0.8) 50%, transparent 70%);
+        }
+        .love-burst.golden {
+            background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 0.8) 50%, transparent 70%);
+        }
+        .love-burst.mirror-echo {
+            background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.9) 40%, rgba(0, 255, 255, 0.4) 70%, transparent 90%);
+        }
+        @keyframes burstExpand {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(5); }
+        }
+        .consciousness-wave {
+            position: absolute;
+            pointer-events: none;
+            border: 2px solid rgba(0, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: waveExpand 2s ease-out forwards;
+        }
+        .consciousness-wave.mirror {
+            border-color: rgba(255, 215, 0, 0.7);
+            animation: waveExpandMirror 2s ease-out forwards;
+        }
+        @keyframes waveExpand {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 300px; height: 300px; opacity: 0; }
+        }
+        @keyframes waveExpandMirror {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 400px; height: 400px; opacity: 0; }
+        }
+        .calibration-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 16px 22px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            color: #FFD700;
+            text-align: center;
+            z-index: 2000;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        /* ── Mobile Controls ── */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+        .mob-btn {
+            background: rgba(0,0,0,0.75);
+            border-radius: 14px;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            border: 1.5px solid rgba(0,255,255,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
+        }
+        .mob-btn .btn-icon { font-size: 22px; line-height: 1; }
+        .mob-btn:active, .mob-btn.active {
+            background: rgba(0,255,255,0.15);
+            border-color: #00ffff;
+            box-shadow: 0 0 16px rgba(0,255,255,0.5);
+        }
+        .mob-btn.burst { border-color: rgba(255,105,180,0.5); color: #FF69B4; width: 80px; height: 80px; }
+        .mob-btn.burst:active, .mob-btn.burst.active {
+            background: rgba(255,105,180,0.2);
+            border-color: #FF69B4;
+            box-shadow: 0 0 20px rgba(255,105,180,0.6);
+        }
+        .mob-btn.level { width: 68px; height: 68px; }
+        .mob-btn.calibrate { width: 68px; height: 68px; border-color: rgba(255,215,0,0.5); color: #FFD700; }
+        .mob-btn.calibrate:active {
+            background: rgba(255,215,0,0.15);
+            border-color: #FFD700;
+            box-shadow: 0 0 16px rgba(255,215,0,0.5);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .mobile-controls { display: flex; }
+            .instructions { display: none; }
+            .coherence-readout { display: none; }
+            .hud { font-size: 12px; top: 10px; left: 10px; }
+            .level-display { font-size: 11px; top: 66px; left: 10px; }
+            .mirror-sync-display { font-size: 11px; top: 102px; left: 10px; }
+            .vibe-meter { width: 130px; top: 10px; right: 10px; }
+            .mirror-meter { width: 130px; top: 56px; right: 10px; }
+            .vibe-label, .mirror-label { font-size: 10px; }
+            .vibe-bar, .mirror-bar { height: 14px; }
+            .game-title { font-size: 22px; letter-spacing: 0.04em; }
+            .calibration-overlay { font-size: 13px; padding: 12px 16px; width: 88vw; }
+        }
+        @media (max-width: 380px) {
+            .hud { font-size: 10px; }
+            .level-display, .mirror-sync-display { font-size: 10px; }
+            .vibe-meter, .mirror-meter { width: 110px; }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            .mobile-controls { bottom: 10px; }
+            .mob-btn.burst { width: 60px; height: 60px; }
+            .mob-btn.level, .mob-btn.calibrate { width: 52px; height: 52px; }
+            .mob-btn .btn-icon { font-size: 18px; }
+            .mob-btn { font-size: 9px; }
+            .hud { font-size: 10px; top: 6px; left: 8px; }
+            .level-display { font-size: 10px; top: 54px; left: 8px; }
+            .mirror-sync-display { display: none; }
+            .vibe-meter, .mirror-meter { width: 110px; top: 6px; }
+            .mirror-meter { top: 46px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-title">THE CONSCIOUSNESS MIRROR</div>
+
+    <div class="hud">
+        <div>LOVE ENERGY: <span id="loveScore">0</span></div>
+        <div>NODES AWAKENED: <span id="nodesAwakened">0</span></div>
+        <div>COHERENCE: <span id="coherencePct">0%</span></div>
+    </div>
+
+    <div class="coherence-readout" id="coherenceReadout"></div>
+
+    <div class="level-display">
+        <div>LEVEL: <span id="currentLevel">CONSCIOUSNESS</span></div>
+        <div>STATUS: <span id="gameStatus">AWAKENING</span></div>
+    </div>
+
+    <div class="mirror-sync-display">
+        MIRROR SYNC: <span id="mirrorSync">0%</span>
+    </div>
+
+    <div class="vibe-meter">
+        <div class="vibe-label">VIBE FREQUENCY</div>
+        <div class="vibe-bar">
+            <div class="vibe-fill" id="vibeFill"></div>
+        </div>
+    </div>
+
+    <div class="mirror-meter">
+        <div class="mirror-label">MIRROR COHERENCE</div>
+        <div class="mirror-bar">
+            <div class="mirror-fill" id="mirrorFill"></div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="instructions">
+        Click to awaken nodes — their mirror awakens in return &nbsp;•&nbsp; SPACE love burst &nbsp;•&nbsp; L level shift &nbsp;•&nbsp; C calibration
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="mobile-controls" id="mobileControls">
+        <div class="mob-btn level" id="mobLevel">
+            <span class="btn-icon">⬆</span>LEVEL
+        </div>
+        <div class="mob-btn burst" id="mobBurst">
+            <span class="btn-icon">💗</span>BURST
+        </div>
+        <div class="mob-btn calibrate" id="mobCalibrate">
+            <span class="btn-icon">◎</span>CALIB
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const gameState = {
+            loveEnergy: 0,
+            nodesAwakened: 0,
+            vibeFrequency: 0,
+            level: 'CONSCIOUSNESS',
+            status: 'AWAKENING',
+            nodes: [],
+            particles: [],
+            loveBurstActive: false,
+            coherence: 0,
+            mirrorCoherence: 0,
+            calibrationMode: false,
+            calibration: { active: false, start: 0, samples: [], mirrorSamples: [] },
+            audio: { ctx: null, main: null, harmonics: [], gain: null, active: false },
+            prevLoveEnergy: 0,
+            prevTime: 0,
+            loveFlux: 0
+        };
+
+        const levels = [
+            { name: 'CONSCIOUSNESS', nodeCount: 20, connectionRange: 150, evolutionSpeed: 0.005, loopSpeed: 1.0, colorIntensity: 1.0, description: 'Awakening — seeing the self reflected' },
+            { name: 'AWARENESS', nodeCount: 30, connectionRange: 180, evolutionSpeed: 0.008, loopSpeed: 1.2, colorIntensity: 1.3, description: 'Recognition — the mirror shows interconnection' },
+            { name: 'PRESENCE', nodeCount: 40, connectionRange: 200, evolutionSpeed: 0.012, loopSpeed: 1.5, colorIntensity: 1.6, description: 'Reflection — living in the eternal now' },
+            { name: 'UNITY', nodeCount: 50, connectionRange: 250, evolutionSpeed: 0.018, loopSpeed: 2.0, colorIntensity: 2.0, description: 'Symmetry — all boundaries dissolve' },
+            { name: 'TRANSCENDENCE', nodeCount: 60, connectionRange: 300, evolutionSpeed: 0.025, loopSpeed: 2.5, colorIntensity: 2.5, description: 'Beyond form — the mirror becomes the light' },
+            { name: 'INFINITE_LOVE', nodeCount: 75, connectionRange: 400, evolutionSpeed: 0.035, loopSpeed: 3.0, colorIntensity: 3.0, description: 'Love without limits — reflection without end' }
+        ];
+
+        let currentLevelIndex = 0;
+
+        // Audio
+        function initAudio() {
+            if (gameState.audio.active) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const gain = ctx.createGain();
+            gain.gain.value = 0.0;
+            gain.connect(ctx.destination);
+
+            const main = ctx.createOscillator();
+            main.type = 'sine';
+            main.frequency.value = 528;
+            main.connect(gain);
+            main.start();
+
+            const harmonics = [639, 741, 852].map(freq => {
+                const o = ctx.createOscillator();
+                o.type = 'sine';
+                o.frequency.value = freq;
+                const g = ctx.createGain();
+                g.gain.value = 0.0;
+                o.connect(g);
+                g.connect(gain);
+                o.start();
+                return { osc: o, gain: g };
+            });
+
+            gameState.audio = { ctx, main, harmonics, gain, active: true };
+        }
+
+        function updateAudioFromVibe() {
+            if (!gameState.audio.active) return;
+            const level = Math.min(1, gameState.vibeFrequency / 100);
+            const base = 0.02 + level * 0.15;
+            gameState.audio.gain.gain.linearRampToValueAtTime(base, gameState.audio.ctx.currentTime + 0.1);
+            const steps = [0.3, 0.6, 0.85];
+            gameState.audio.harmonics.forEach((h, i) => {
+                const target = level > steps[i] ? (base * (0.3 + i * 0.15)) : 0.0;
+                h.gain.gain.linearRampToValueAtTime(target, gameState.audio.ctx.currentTime + 0.2);
+            });
+        }
+
+        function bloomChord() {
+            if (!gameState.audio.active) return;
+            const now = gameState.audio.ctx.currentTime;
+            const peak = 0.3;
+            gameState.audio.harmonics.forEach(h => {
+                h.gain.gain.cancelScheduledValues(now);
+                h.gain.gain.setValueAtTime(h.gain.gain.value, now);
+                h.gain.gain.linearRampToValueAtTime(peak, now + 0.05);
+                h.gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            });
+        }
+
+        // Mirror chord — higher register, golden tone
+        function mirrorChord() {
+            if (!gameState.audio.active) return;
+            const now = gameState.audio.ctx.currentTime;
+            const h = gameState.audio.harmonics[0]; // 639 Hz
+            h.gain.gain.cancelScheduledValues(now);
+            h.gain.gain.setValueAtTime(h.gain.gain.value, now);
+            h.gain.gain.linearRampToValueAtTime(0.15, now + 0.03);
+            h.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        }
+
+        function computeCoherence() {
+            const awakened = gameState.nodes.filter(n => n.isAwakened);
+            if (awakened.length === 0) return 0;
+            let sum = 0;
+            for (const n of awakened) {
+                const phaseTerm = (Math.abs(Math.sin(n.loopPhase)) + Math.abs(Math.cos(n.loopPhase))) / 2;
+                sum += phaseTerm * Math.max(0, n.resonanceField);
+            }
+            const norm = 1 + currentLevelIndex * 0.3;
+            return Math.min(1, (sum / awakened.length) / norm);
+        }
+
+        function computeMirrorCoherence() {
+            const pairedAndBothAwake = gameState.nodes.filter(n =>
+                n.mirrorNode && n.isAwakened && n.mirrorNode.isAwakened
+            );
+            if (pairedAndBothAwake.length === 0) return 0;
+            let sum = 0;
+            for (const n of pairedAndBothAwake) {
+                // phase alignment: 1 when in sync, 0 when anti-phase
+                const diff = Math.abs(Math.sin(n.loopPhase) - Math.sin(n.mirrorNode.loopPhase));
+                sum += 1 - Math.min(1, diff);
+            }
+            return sum / pairedAndBothAwake.length;
+        }
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class ConsciousnessNode {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.radius = 15;
+                this.isAwakened = false;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.connections = [];
+                this.energy = 0;
+                this.evolutionLevel = 0;
+                this.lastConnectionTime = 0;
+                this.resonanceField = 0;
+                this.colorShift = Math.random() * 360;
+                this.loopPhase = Math.random() * Math.PI * 2;
+                this.orbitRadius = 0;
+                this.orbitSpeed = 0;
+                this.breathPhase = Math.random() * Math.PI * 2;
+                this.connectionPulse = 0;
+                this.mirrorNode = null;
+                this.isMirror = false;
+            }
+            update() {
+                const currentLevel = levels[currentLevelIndex];
+                this.pulsePhase += 0.02 * currentLevel.loopSpeed;
+                this.loopPhase += (0.03 + this.evolutionLevel * 0.01) * currentLevel.loopSpeed;
+                this.breathPhase += 0.015 * currentLevel.loopSpeed;
+                this.connectionPulse += 0.05 * currentLevel.loopSpeed;
+
+                if (this.isAwakened) {
+                    this.energy = Math.min(this.energy + 0.01, 1);
+                    const connectionStrength = this.connections.length * 0.1;
+                    this.evolutionLevel = Math.min(this.evolutionLevel + connectionStrength * currentLevel.evolutionSpeed, 5 + currentLevelIndex);
+
+                    if (this.connections.length > 0) {
+                        this.orbitRadius = Math.min(this.orbitRadius + 0.1, 15 + this.evolutionLevel * 5 * currentLevel.loopSpeed);
+                        this.orbitSpeed = (0.01 + this.connections.length * 0.005) * currentLevel.loopSpeed;
+                    }
+
+                    this.updateResonanceField();
+                    this.colorShift += (0.5 + this.evolutionLevel * 0.2 + Math.sin(this.loopPhase) * 0.3) * currentLevel.colorIntensity;
+
+                    if (this.connections.length >= 2) {
+                        const loopIntensity = currentLevel.loopSpeed * (1 + currentLevelIndex * 0.3);
+                        const loopMotion = Math.sin(this.loopPhase) * (2 + this.evolutionLevel) * loopIntensity;
+                        this.x += Math.cos(this.loopPhase * 0.5) * loopMotion * 0.1;
+                        this.y += Math.sin(this.loopPhase * 0.7) * loopMotion * 0.1;
+                        this.x = Math.max(50, Math.min(canvas.width - 50, this.x));
+                        this.y = Math.max(50, Math.min(canvas.height - 50, this.y));
+                    }
+                }
+            }
+            updateResonanceField() {
+                const currentLevel = levels[currentLevelIndex];
+                let nearbyAwakened = 0;
+                let totalResonance = 0;
+                gameState.nodes.forEach(node => {
+                    if (node !== this && node.isAwakened) {
+                        const distance = Math.sqrt((this.x - node.x) ** 2 + (this.y - node.y) ** 2);
+                        const resonanceRange = 120 * currentLevel.colorIntensity;
+                        if (distance < resonanceRange) {
+                            nearbyAwakened++;
+                            totalResonance += Math.sin(this.loopPhase + distance * 0.01 * currentLevel.loopSpeed) * 0.2 * currentLevel.colorIntensity;
+                        }
+                    }
+                });
+
+                // Mirror resonance bonus — paired node contributes extra field
+                if (this.mirrorNode && this.mirrorNode.isAwakened) {
+                    totalResonance += 0.3 * (1 + currentLevelIndex * 0.1);
+                }
+
+                this.resonanceField = Math.min((nearbyAwakened / 5) + totalResonance, 1 + currentLevelIndex * 0.3);
+            }
+            draw() {
+                if (!this.isAwakened) {
+                    const breathe = 1 + Math.sin(this.breathPhase) * 0.1;
+                    const alpha = 0.3 + Math.sin(this.pulsePhase) * 0.1;
+                    // Mirror nodes appear slightly golden when dormant
+                    const dormantColor = this.isMirror
+                        ? `rgba(255, 215, 0, ${alpha * 0.6})`
+                        : `rgba(0, 255, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius * breathe, 0, Math.PI * 2);
+                    ctx.fillStyle = dormantColor;
+                    ctx.fill();
+                    return;
+                }
+
+                const baseHue = (this.colorShift + this.evolutionLevel * 60 + Math.sin(this.loopPhase) * 30) % 360;
+                const saturation = 70 + this.evolutionLevel * 10 + Math.sin(this.loopPhase * 1.3) * 10;
+                const lightness = 50 + this.resonanceField * 30 + Math.sin(this.breathPhase) * 10;
+                const alpha = 0.8 + Math.sin(this.pulsePhase) * 0.2;
+                const breathe = 1 + Math.sin(this.breathPhase) * 0.15;
+                const nodeSize = (this.radius + this.evolutionLevel * 2) * breathe;
+
+                // Mirror node golden tint overlay
+                const mirrorTint = (this.isMirror && this.mirrorNode && this.mirrorNode.isAwakened)
+                    ? (Math.sin(this.loopPhase * 0.5) * 0.5 + 0.5) * 0.4
+                    : 0;
+
+                if (this.connections.length >= 2) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    for (let i = 0; i < 8; i++) {
+                        const trailPhase = this.loopPhase - i * 0.3;
+                        const trailX = this.x + Math.cos(trailPhase) * this.orbitRadius * 0.5;
+                        const trailY = this.y + Math.sin(trailPhase) * this.orbitRadius * 0.3;
+                        const trailSize = nodeSize * (0.3 + i * 0.05);
+                        ctx.beginPath();
+                        ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${(baseHue + i * 20) % 360}, ${saturation}%, ${lightness}%, ${0.1 + i * 0.02})`;
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, nodeSize, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${baseHue}, ${saturation}%, ${lightness}%, ${alpha})`;
+                ctx.fill();
+
+                // Mirror tint layer
+                if (mirrorTint > 0) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, nodeSize, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 215, 0, ${mirrorTint})`;
+                    ctx.fill();
+                }
+
+                const corePhase = this.loopPhase * 2;
+                const coreSize = nodeSize * (0.6 + Math.sin(corePhase) * 0.1);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, coreSize, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${(baseHue + 60) % 360}, ${saturation}%, ${Math.min(lightness + 20, 90)}%, ${alpha * 0.8})`;
+                ctx.fill();
+
+                for (let i = 1; i <= Math.floor(this.evolutionLevel) + 1; i++) {
+                    const ringPhase = this.loopPhase + i * 0.8;
+                    const ringRadius = nodeSize + i * (8 + Math.sin(ringPhase) * 3);
+                    const ringAlpha = alpha * (0.4 - i * 0.05) * (1 + Math.sin(ringPhase) * 0.3);
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(${(baseHue + i * 40 + Math.sin(ringPhase) * 20) % 360}, ${saturation}%, ${lightness}%, ${Math.max(0, ringAlpha)})`;
+                    ctx.lineWidth = 1 + Math.sin(ringPhase) * 0.5;
+                    ctx.stroke();
+                }
+
+                if (this.resonanceField > 0.2) {
+                    for (let wave = 0; wave < 3; wave++) {
+                        const wavePhase = this.loopPhase * (1 + wave * 0.3);
+                        const pulseSize = nodeSize + 20 + wave * 10 + Math.sin(wavePhase) * 8;
+                        const pulseAlpha = this.resonanceField * (0.3 - wave * 0.08) * (1 + Math.sin(wavePhase) * 0.5);
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
+                        ctx.strokeStyle = `hsla(${(baseHue + wave * 60) % 360}, ${saturation}%, ${lightness}%, ${Math.max(0, pulseAlpha)})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+
+                if (this.connections.length >= 3) {
+                    for (let spark = 0; spark < 6; spark++) {
+                        const sparkAngle = (this.loopPhase + spark * Math.PI / 3) % (Math.PI * 2);
+                        const sparkDistance = nodeSize + 25 + Math.sin(this.loopPhase * 2 + spark) * 5;
+                        const sparkX = this.x + Math.cos(sparkAngle) * sparkDistance;
+                        const sparkY = this.y + Math.sin(sparkAngle) * sparkDistance;
+                        const sparkSize = 1 + Math.sin(this.loopPhase * 3 + spark) * 1;
+                        ctx.beginPath();
+                        ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${(baseHue + spark * 60) % 360}, 90%, 80%, 0.8)`;
+                        ctx.fill();
+                    }
+                }
+
+                // Mirror link line — subtle golden thread to paired node
+                if (this.mirrorNode && this.mirrorNode.isAwakened && !this.isMirror) {
+                    const linkAlpha = 0.06 + Math.sin(this.loopPhase * 0.3) * 0.03;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.mirrorNode.x, this.mirrorNode.y);
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${linkAlpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.setLineDash([4, 8]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+            isClicked(mx, my) {
+                const touchPad = ('ontouchstart' in window) ? 12 : 0;
+                const currentSize = this.radius + this.evolutionLevel * 2 + touchPad;
+                const distance = Math.sqrt((mx - this.x) ** 2 + (my - this.y) ** 2);
+                return distance < currentSize;
+            }
+            awaken(fromMirror = false) {
+                if (!this.isAwakened) {
+                    this.isAwakened = true;
+                    gameState.nodesAwakened++;
+                    gameState.loveEnergy += fromMirror ? 5 : 10;
+                    gameState.vibeFrequency = Math.min(gameState.vibeFrequency + (fromMirror ? 3 : 5), 100);
+                    createConsciousnessWave(this.x, this.y);
+                    this.connectToNearbyNodes();
+                    updateHUD();
+                    updateAudioFromVibe();
+                    checkLevelProgression();
+
+                    // Trigger mirror awakening
+                    if (!fromMirror && this.mirrorNode && !this.mirrorNode.isAwakened) {
+                        setTimeout(() => {
+                            if (!this.mirrorNode.isAwakened) {
+                                this.mirrorNode.awaken(true);
+                                createMirrorEcho(this.mirrorNode.x, this.mirrorNode.y);
+                                mirrorChord();
+                            }
+                        }, 420);
+                    }
+                }
+            }
+            connectToNearbyNodes() {
+                const currentLevel = levels[currentLevelIndex];
+                gameState.nodes.forEach(otherNode => {
+                    if (otherNode !== this && otherNode.isAwakened) {
+                        const distance = Math.sqrt((this.x - otherNode.x) ** 2 + (this.y - otherNode.y) ** 2);
+                        if (distance < currentLevel.connectionRange && !this.connections.includes(otherNode)) {
+                            this.connections.push(otherNode);
+                            otherNode.connections.push(this);
+                            const evolutionBoost = 0.2 * (1 + currentLevelIndex * 0.5);
+                            this.evolutionLevel += evolutionBoost;
+                            otherNode.evolutionLevel += evolutionBoost;
+                            const phaseSyncStrength = 0.1 * (1 + currentLevelIndex * 0.3);
+                            const avgPhase = (this.loopPhase + otherNode.loopPhase) / 2;
+                            this.loopPhase = avgPhase + Math.PI * phaseSyncStrength;
+                            otherNode.loopPhase = avgPhase - Math.PI * phaseSyncStrength;
+                            this.lastConnectionTime = Date.now();
+                            otherNode.lastConnectionTime = Date.now();
+                        }
+                    }
+                });
+            }
+            drawConnections() {
+                if (this.isAwakened) {
+                    this.connections.forEach((node, index) => {
+                        const avgEvolution = (this.evolutionLevel + node.evolutionLevel) / 2;
+                        const connectionHue = ((this.colorShift + node.colorShift) / 2 + Math.sin(this.connectionPulse + index) * 30) % 360;
+                        const connectionIntensity = 0.4 + avgEvolution * 0.1 + Math.sin(this.connectionPulse) * 0.2;
+                        const lineWidth = 1 + avgEvolution * 0.5 + Math.sin(this.connectionPulse * 1.5) * 0.3;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(node.x, node.y);
+                        ctx.strokeStyle = `hsla(${connectionHue}, 80%, 60%, ${Math.max(0, connectionIntensity)})`;
+                        ctx.lineWidth = Math.max(0.5, lineWidth);
+                        ctx.stroke();
+
+                        const distance = Math.sqrt((node.x - this.x) ** 2 + (node.y - this.y) ** 2);
+                        const pulseCount = Math.floor(distance / 30) + 1;
+                        for (let pulse = 0; pulse < pulseCount; pulse++) {
+                            const pulseProgress = (pulse / pulseCount + this.connectionPulse * 0.1) % 1;
+                            const pulseX = this.x + (node.x - this.x) * pulseProgress;
+                            const pulseY = this.y + (node.y - this.y) * pulseProgress;
+                            const pulseSize = 2 + avgEvolution + Math.sin(this.connectionPulse * 2 + pulse) * 1.5;
+                            const pulseAlpha = 0.8 * (1 - pulseProgress * 0.5);
+                            ctx.beginPath();
+                            ctx.arc(pulseX, pulseY, Math.max(1, pulseSize), 0, Math.PI * 2);
+                            ctx.fillStyle = `hsla(${(connectionHue + pulse * 20) % 360}, 90%, 70%, ${pulseAlpha})`;
+                            ctx.fill();
+                        }
+
+                        const reverseProgress = (this.connectionPulse * 0.15) % 1;
+                        const reverseX = node.x + (this.x - node.x) * reverseProgress;
+                        const reverseY = node.y + (this.y - node.y) * reverseProgress;
+                        const reverseSize = 1.5 + avgEvolution * 0.5;
+                        ctx.beginPath();
+                        ctx.arc(reverseX, reverseY, reverseSize, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsla(${(connectionHue + 180) % 360}, 90%, 80%, 0.6)`;
+                        ctx.fill();
+                    });
+                }
+            }
+        }
+
+        class LoveParticle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 1;
+                this.decay = 0.02;
+                this.size = Math.random() * 3 + 2;
+                this.color = color;
+                this.hue = Math.random() * 360;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98; this.vy *= 0.98;
+                this.hue += 2;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = `hsl(${this.hue}, 80%, 60%)`;
+                ctx.fill();
+                ctx.restore();
+            }
+            isDead() { return this.life <= 0; }
+        }
+
+        // Mirror Axis
+        function drawMirrorAxis() {
+            const cx = canvas.width / 2;
+            const t = performance.now() * 0.001;
+            const baseAlpha = 0.07 + Math.sin(t * 0.6) * 0.03;
+            const mirrorSync = gameState.mirrorCoherence;
+            const syncBoost = mirrorSync * 0.12;
+
+            // Glow band
+            const grd = ctx.createLinearGradient(cx - 12, 0, cx + 12, 0);
+            grd.addColorStop(0, 'rgba(0,0,0,0)');
+            grd.addColorStop(0.35, `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 0.4})`);
+            grd.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha + syncBoost})`);
+            grd.addColorStop(0.65, `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 0.4})`);
+            grd.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(cx - 12, 0, 24, canvas.height);
+
+            // Center line
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, canvas.height);
+            ctx.strokeStyle = `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 2})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+
+            // Axis label
+            ctx.save();
+            ctx.font = '9px Courier New';
+            ctx.fillStyle = `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 3.5})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('MIRROR AXIS', cx, 14);
+            ctx.restore();
+
+            // Pulse nodes along axis when mirror coherence is high
+            if (mirrorSync > 0.3) {
+                const pulseCount = 5;
+                for (let i = 0; i < pulseCount; i++) {
+                    const yPos = (canvas.height / (pulseCount + 1)) * (i + 1);
+                    const pulse = Math.sin(t * 2 + i * 1.2) * 0.5 + 0.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, yPos, 2 + pulse * 3 * mirrorSync, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 215, 0, ${0.4 * mirrorSync * pulse})`;
+                    ctx.fill();
+                }
+            }
+        }
+
+        function initializeNodes() {
+            gameState.nodes = [];
+            const currentLevel = levels[currentLevelIndex];
+            const pairCount = Math.floor(currentLevel.nodeCount / 2);
+            for (let i = 0; i < pairCount; i++) {
+                const x = Math.random() * (canvas.width / 2 - 90) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
+                const node = new ConsciousnessNode(x, y);
+                const mirrorX = canvas.width - x;
+                const mirrorNode = new ConsciousnessNode(mirrorX, y);
+                node.mirrorNode = mirrorNode;
+                mirrorNode.mirrorNode = node;
+                mirrorNode.isMirror = true;
+                // Mirror nodes share starting loopPhase offset for visual symmetry
+                mirrorNode.loopPhase = node.loopPhase + Math.PI;
+                mirrorNode.colorShift = node.colorShift + 30;
+                gameState.nodes.push(node, mirrorNode);
+            }
+            gameState.status = currentLevel.description;
+        }
+
+        function createConsciousnessWave(x, y) {
+            const wave = document.createElement('div');
+            wave.className = 'consciousness-wave';
+            wave.style.left = (x - 150) + 'px';
+            wave.style.top = (y - 150) + 'px';
+            document.body.appendChild(wave);
+            setTimeout(() => { if (wave.parentNode) wave.parentNode.removeChild(wave); }, 2000);
+        }
+
+        function createMirrorEcho(x, y) {
+            const wave = document.createElement('div');
+            wave.className = 'consciousness-wave mirror';
+            wave.style.left = (x - 200) + 'px';
+            wave.style.top = (y - 200) + 'px';
+            document.body.appendChild(wave);
+            setTimeout(() => { if (wave.parentNode) wave.parentNode.removeChild(wave); }, 2000);
+
+            // Golden burst
+            const burst = document.createElement('div');
+            burst.className = 'love-burst mirror-echo';
+            burst.style.left = (x - 10) + 'px';
+            burst.style.top = (y - 10) + 'px';
+            document.body.appendChild(burst);
+            setTimeout(() => { if (burst.parentNode) burst.parentNode.removeChild(burst); }, 1000);
+
+            // Mirror particles — golden
+            for (let i = 0; i < 10; i++) {
+                const p = new LoveParticle(x, y, 'golden');
+                p.hue = 45 + (Math.random() - 0.5) * 30;
+                gameState.particles.push(p);
+            }
+        }
+
+        function createLoveBurst(x, y) {
+            initAudio();
+            const burstColors = ['violet', 'emerald', 'sapphire', 'ruby', 'golden'];
+            const colorIndex = Math.floor(Date.now() / 1000) % burstColors.length;
+            const burstColor = burstColors[colorIndex];
+
+            const burst = document.createElement('div');
+            burst.className = `love-burst ${burstColor}`;
+            burst.style.left = (x - 10) + 'px';
+            burst.style.top = (y - 10) + 'px';
+            document.body.appendChild(burst);
+            setTimeout(() => { if (burst.parentNode) burst.parentNode.removeChild(burst); }, 1000);
+
+            const particleHues = { violet: 270, emerald: 120, sapphire: 210, ruby: 350, golden: 45 };
+            for (let i = 0; i < 15; i++) {
+                const p = new LoveParticle(x, y, burstColor);
+                p.hue = particleHues[burstColor] + (Math.random() - 0.5) * 60;
+                gameState.particles.push(p);
+            }
+
+            gameState.nodes.forEach(node => {
+                const distance = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
+                if (distance < 80) {
+                    node.awaken();
+                    if (node.isAwakened) node.evolutionLevel += 0.1;
+                }
+            });
+
+            gameState.loveEnergy += 5;
+            updateHUD();
+            updateAudioFromVibe();
+        }
+
+        function updateHUD() {
+            document.getElementById('loveScore').textContent = gameState.loveEnergy;
+            document.getElementById('nodesAwakened').textContent = gameState.nodesAwakened;
+            document.getElementById('currentLevel').textContent = gameState.level;
+            document.getElementById('gameStatus').textContent = gameState.status;
+            document.getElementById('vibeFill').style.width = gameState.vibeFrequency + '%';
+
+            const pct = Math.round(gameState.coherence * 100);
+            const el = document.getElementById('coherencePct');
+            if (el) el.textContent = pct + '%';
+
+            const mirrorPct = Math.round(gameState.mirrorCoherence * 100);
+            const msEl = document.getElementById('mirrorSync');
+            if (msEl) msEl.textContent = mirrorPct + '%';
+
+            const mfEl = document.getElementById('mirrorFill');
+            if (mfEl) mfEl.style.width = mirrorPct + '%';
+
+            const cr = document.getElementById('coherenceReadout');
+            if (cr) cr.textContent = `COHERENCE ${pct}%  |  MIRROR ${mirrorPct}%  |  LOVE ${gameState.loveEnergy}  |  NODES ${gameState.nodesAwakened}`;
+        }
+
+        function checkLevelProgression() {
+            const totalNodes = gameState.nodes.length;
+            const awakenedPercentage = (gameState.nodesAwakened / totalNodes) * 100;
+            if (awakenedPercentage >= 80 && currentLevelIndex < levels.length - 1) {
+                levelUp();
+            }
+            const currentLevel = levels[currentLevelIndex];
+            if (awakenedPercentage < 25) gameState.status = 'AWAKENING: ' + currentLevel.description;
+            else if (awakenedPercentage < 50) gameState.status = 'EXPANDING: ' + currentLevel.description;
+            else if (awakenedPercentage < 75) gameState.status = 'CONNECTING: ' + currentLevel.description;
+            else gameState.status = 'TRANSCENDING: ' + currentLevel.description;
+        }
+
+        function levelUp() {
+            if (currentLevelIndex < levels.length - 1) {
+                currentLevelIndex++;
+                const newLevel = levels[currentLevelIndex];
+                gameState.level = newLevel.name;
+                gameState.status = 'LEVEL SHIFT ACTIVATED';
+                createLevelShiftEffect();
+                bloomChord();
+
+                gameState.nodes.forEach(node => {
+                    if (node.isAwakened) {
+                        node.evolutionLevel += 1 + currentLevelIndex * 0.5;
+                        node.colorShift += 120;
+                        node.loopPhase += Math.PI * 0.5;
+                    }
+                });
+
+                // Add new paired nodes
+                const additionalPairs = Math.floor(Math.max(0, newLevel.nodeCount - gameState.nodes.length) / 2);
+                for (let i = 0; i < additionalPairs; i++) {
+                    const x = Math.random() * (canvas.width / 2 - 90) + 50;
+                    const y = Math.random() * (canvas.height - 100) + 50;
+                    const node = new ConsciousnessNode(x, y);
+                    const mirrorX = canvas.width - x;
+                    const mirrorNode = new ConsciousnessNode(mirrorX, y);
+                    node.mirrorNode = mirrorNode;
+                    mirrorNode.mirrorNode = node;
+                    mirrorNode.isMirror = true;
+                    mirrorNode.loopPhase = node.loopPhase + Math.PI;
+                    mirrorNode.colorShift = node.colorShift + 30;
+                    gameState.nodes.push(node, mirrorNode);
+                }
+
+                gameState.vibeFrequency = Math.min(gameState.vibeFrequency, 70);
+                setTimeout(() => { gameState.status = newLevel.description; updateHUD(); }, 2000);
+                updateHUD();
+            }
+        }
+
+        function createLevelShiftEffect() {
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    createConsciousnessWave(x, y);
+                }, i * 200);
+            }
+            // Mirror axis corners
+            const cx = canvas.width / 2;
+            [[cx, 50], [cx, canvas.height - 50], [50, canvas.height / 2], [canvas.width - 50, canvas.height / 2]].forEach(([x, y], i) => {
+                setTimeout(() => createMirrorEcho(x, y), i * 250);
+            });
+            gameState.loveEnergy += 50;
+            gameState.vibeFrequency = Math.min(gameState.vibeFrequency + 20, 100);
+        }
+
+        // Events
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            let nodeClicked = false;
+            gameState.nodes.forEach(node => {
+                if (node.isClicked(x, y)) { node.awaken(); nodeClicked = true; }
+            });
+            if (!nodeClicked) {
+                for (let i = 0; i < 5; i++) {
+                    const p = new LoveParticle(x, y);
+                    p.hue = Math.random() * 360;
+                    gameState.particles.push(p);
+                }
+            }
+        });
+
+        let spacePressed = false;
+        let mouseX = 0, mouseY = 0;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !spacePressed) {
+                spacePressed = true;
+                gameState.loveBurstActive = true;
+                initAudio();
+                e.preventDefault();
+            }
+            if (e.code === 'KeyL') {
+                levelUp();
+                setTimeout(() => {
+                    for (let burst = 0; burst < 12; burst++) {
+                        setTimeout(() => {
+                            const x = Math.random() * canvas.width;
+                            const y = Math.random() * canvas.height;
+                            createLoveBurst(x, y);
+                        }, burst * 150);
+                    }
+                }, 500);
+            }
+            if (e.code === 'KeyC') {
+                initAudio();
+                startCalibration();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                spacePressed = false;
+                gameState.loveBurstActive = false;
+            }
+        });
+
+        // ── Touch / Mobile ──
+        const isMobile = () => window.innerWidth <= 600 || ('ontouchstart' in window);
+
+        // Canvas touch — awaken nodes + track position for burst
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudio();
+            const rect = canvas.getBoundingClientRect();
+            Array.from(e.changedTouches).forEach(touch => {
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                mouseX = x; mouseY = y;
+                let nodeClicked = false;
+                gameState.nodes.forEach(node => {
+                    if (node.isClicked(x, y)) { node.awaken(); nodeClicked = true; }
+                });
+                if (!nodeClicked) {
+                    for (let i = 0; i < 5; i++) {
+                        const p = new LoveParticle(x, y);
+                        p.hue = Math.random() * 360;
+                        gameState.particles.push(p);
+                    }
+                }
+            });
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            mouseX = touch.clientX - rect.left;
+            mouseY = touch.clientY - rect.top;
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => { e.preventDefault(); }, { passive: false });
+
+        // Mobile control buttons
+        const mobBurst = document.getElementById('mobBurst');
+        const mobLevel = document.getElementById('mobLevel');
+        const mobCalibrate = document.getElementById('mobCalibrate');
+
+        if (mobBurst) {
+            mobBurst.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                initAudio();
+                gameState.loveBurstActive = true;
+                mobBurst.classList.add('active');
+            }, { passive: false });
+            mobBurst.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                gameState.loveBurstActive = false;
+                mobBurst.classList.remove('active');
+            }, { passive: false });
+            mobBurst.addEventListener('touchcancel', () => {
+                gameState.loveBurstActive = false;
+                mobBurst.classList.remove('active');
+            });
+        }
+
+        if (mobLevel) {
+            mobLevel.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                initAudio();
+                levelUp();
+                setTimeout(() => {
+                    for (let burst = 0; burst < 12; burst++) {
+                        setTimeout(() => {
+                            const x = Math.random() * canvas.width;
+                            const y = Math.random() * canvas.height;
+                            createLoveBurst(x, y);
+                        }, burst * 150);
+                    }
+                }, 500);
+            }, { passive: false });
+        }
+
+        if (mobCalibrate) {
+            mobCalibrate.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                initAudio();
+                startCalibration();
+            }, { passive: false });
+        }
+
+        // Orientation / resize — reinit node positions to fit new canvas
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const oldW = canvas.width;
+                const oldH = canvas.height;
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                // Rescale node positions proportionally
+                const scaleX = canvas.width / oldW;
+                const scaleY = canvas.height / oldH;
+                gameState.nodes.forEach(node => {
+                    node.x = Math.max(50, Math.min(canvas.width - 50, node.x * scaleX));
+                    node.y = Math.max(50, Math.min(canvas.height - 50, node.y * scaleY));
+                });
+            }, 150);
+        });
+
+        // Coherence sampler
+        setInterval(() => {
+            const now = performance.now();
+            if (!gameState.prevTime) gameState.prevTime = now;
+
+            gameState.coherence = computeCoherence();
+            gameState.mirrorCoherence = computeMirrorCoherence();
+
+            if (gameState.calibration.active) {
+                gameState.calibration.samples.push(gameState.coherence);
+                gameState.calibration.mirrorSamples.push(gameState.mirrorCoherence);
+                if (now - gameState.calibration.start >= 10000) finishCalibration();
+            }
+
+            const dt = Math.max(1, (now - gameState.prevTime) / 1000);
+            const dE = gameState.loveEnergy - gameState.prevLoveEnergy;
+            gameState.loveFlux = dE / dt;
+            gameState.prevLoveEnergy = gameState.loveEnergy;
+            gameState.prevTime = now;
+
+            updateHUD();
+        }, 500);
+
+        function startCalibration() {
+            if (gameState.calibration.active) return;
+            gameState.calibration = { active: true, start: performance.now(), samples: [], mirrorSamples: [] };
+            gameState.calibrationMode = true;
+            const ov = document.createElement('div');
+            ov.className = 'calibration-overlay';
+            ov.id = 'calibrationOverlay';
+            ov.textContent = 'Calibration running... hold steady 10s';
+            document.body.appendChild(ov);
+        }
+
+        function finishCalibration() {
+            if (!gameState.calibration.active) return;
+            const samples = gameState.calibration.samples;
+            const mirrorSamples = gameState.calibration.mirrorSamples;
+            const mean = samples.reduce((a,b)=>a+b,0) / Math.max(1, samples.length);
+            const mirrorMean = mirrorSamples.reduce((a,b)=>a+b,0) / Math.max(1, mirrorSamples.length);
+            const variance = samples.reduce((a,b)=>a+(b-mean)*(b-mean),0) / Math.max(1, samples.length);
+            gameState.calibration.active = false;
+            gameState.calibrationMode = false;
+            const pct = Math.round(mean * 100);
+            const mirrorPct = Math.round(mirrorMean * 100);
+            const ov = document.getElementById('calibrationOverlay');
+            if (ov) {
+                ov.innerHTML = `L²_C Calibration Complete<br/>Baseline Coherence: ${pct}%<br/>Mirror Sync: ${mirrorPct}%<br/>Trust² Variance: ${variance.toFixed(3)}<br/>Love Flux: ${(gameState.loveFlux||0).toFixed(2)}/s`;
+                setTimeout(()=>{ if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 3500);
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawMirrorAxis();
+
+            if (gameState.loveBurstActive) {
+                createLoveBurst(mouseX, mouseY);
+            }
+
+            gameState.particles = gameState.particles.filter(p => {
+                p.update();
+                p.draw();
+                return !p.isDead();
+            });
+
+            gameState.nodes.forEach(node => {
+                if (!gameState.calibrationMode) node.update();
+                node.drawConnections();
+                node.draw();
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function init() {
+            initializeNodes();
+            updateHUD();
+            updateAudioFromVibe();
+            gameLoop();
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
