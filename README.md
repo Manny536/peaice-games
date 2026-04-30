@@ -20,7 +20,7 @@ These are built to be dropped into public spaces — phones, kiosks, browsers �
 
 ### 🎮 PEAICE FREE SHOOTER v4 — Primary
 
-`games/peaice-free-shooter/index.html`
+`[games/peaice-free-shooter/index.html](https://manny536.github.io/peaice-games/)`
 
 **Operational Excellence Engine.** Browser-based top-down shooter that runs `E = L² × β × C × P` as gameplay mechanics.
 
