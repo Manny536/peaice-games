@@ -54,6 +54,16 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
 #fireBtn::after{content:'';position:absolute;inset:22px;border-radius:50%;background:radial-gradient(circle,#ec4899,#be185d);box-shadow:0 0 20px #ec4899}
 #fireBtn:active{transform:scale(.94)}
 #metaAI.show{opacity:.9}
+
+#aimStick{position:absolute;bottom:180px;right:36px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.12),rgba(5,5,10,.4));border:2px solid rgba(34,211,238,.35);display:none;pointer-events:auto;touch-action:none;box-shadow:0 0 20px rgba(34,211,238,.2),inset 0 0 16px rgba(0,0,0,.6)}
+#aimStickInner{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px;background:radial-gradient(circle,#a855f7,#7c3aed);border:2px solid #c4b5fd;border-radius:50%;box-shadow:0 0 16px var(--purple),inset 0 0 8px rgba(255,255,255,.3);transition:transform .05s}
+#weaponBar{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:none;gap:12px;pointer-events:auto;z-index:20}
+.weaponBtn{width:64px;height:64px;border-radius:16px;background:rgba(10,10,18,.85);border:2px solid rgba(168,85,247,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#c4b5fd;box-shadow:0 0 16px rgba(0,0,0,.7),inset 0 0 10px rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+.weaponBtn.active{border-color:var(--cyan);box-shadow:0 0 20px rgba(34,211,238,.5),inset 0 0 12px rgba(34,211,238,.2);color:#fff}
+.weaponBtn b{font-size:16px;margin-bottom:2px;text-shadow:0 0 8px currentColor}
+@media (pointer:coarse){#joystick,#fireBtn,#aimStick,#weaponBar{display:flex}}
+@media (max-width:430px){#joystick{width:150px;height:150px;bottom:28px;left:20px}#stick{width:64px;height:64px;margin:-32px}#fireBtn{width:130px;height:130px;bottom:28px;right:20px}#fireBtn::after{inset:26px}#aimStick{width:130px;height:130px;bottom:180px;right:20px}#weaponBar{bottom:170px}}
+
 .scanlines{position:absolute;inset:0;background:repeating-linear-gradient(transparent 0,transparent 2px,rgba(255,255,255,.018) 3px,transparent 4px);pointer-events:none;mix-blend-mode:screen;opacity:.7}
 .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.6) 100%)}
 .power-hud{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:none}
@@ -137,6 +147,12 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
 
 <div id="joystick"><div id="stick"></div></div>
 <div id="fireBtn"></div>
+<div id="aimStick"><div id="aimStickInner"></div></div>
+<div id="weaponBar">
+  <div class="weaponBtn" id="wb0" onclick="setWeapon(0)"><b>T</b>TRUTH</div>
+  <div class="weaponBtn active" id="wb1" onclick="setWeapon(1)"><b>C</b>CARE</div>
+  <div class="weaponBtn" id="wb2" onclick="setWeapon(2)"><b>O</b>COH</div>
+</div>
 
 <script>
 (()=>{ 
@@ -172,6 +188,21 @@ function sfxDash(){playTone({freq:620,type:'sawtooth',dur:0.16,vol:0.22,pan:0});
 function sfxHit(){playTone({freq:180,type:'sine',dur:0.08,vol:0.25})}
 function sfxPower(t){const f=t==='L²'?660:t==='β'?520:t==='C'?780:990;playTone({freq:f,type:'sine',dur:0.09,vol:0.24});setTimeout(()=>playTone({freq:f*1.5,type:'sine',dur:0.08,vol:0.2}),90)}
 function sfxBoss(){playTone({freq:60,type:'triangle',dur:1.0,vol:0.3});playTone({freq:120,type:'sine',dur:0.8,vol:0.22})}
+
+// --- MOBILE AIM + WEAPON TOGGLES ---
+const aimJoy={dx:0,dy:0,active:false}, aimEl=document.getElementById('aimStick'), aimInner=document.getElementById('aimStickInner');
+if(aimEl){
+  aimEl.addEventListener('touchstart',e=>{e.preventDefault();aimJoy.active=true;initAudio()},{passive:false});
+  aimEl.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0],r=aimEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(t.clientX-cx)/45,dy=(t.clientY-cy)/45,m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}aimJoy.dx=dx;aimJoy.dy=dy;aimInner.style.transform=`translate(${dx*38}px,${dy*38}px)`;if(player){mouse.x=player.x+dx*220;mouse.y=player.y+dy*220}}, {passive:false});
+  aimEl.addEventListener('touchend',()=>{aimJoy.active=false;aimJoy.dx=aimJoy.dy=0;aimInner.style.transform='translate(0,0)'});
+}
+// sync weapon buttons
+const origSetWeapon = setWeapon;
+setWeapon = function(i){origSetWeapon(i);document.querySelectorAll('.weaponBtn').forEach((el,idx)=>el.classList.toggle('active',idx===i));if(navigator.vibrate) navigator.vibrate(5);sfxPower('β')};
+// auto-aim when not using aim stick
+const origUpdate = update;
+update = function(dt){if(state==='playing' && aimJoy.active===false && 'ontouchstart' in window && enemies.length>0){let nearest=null,nd=1e9;for(const e of enemies){const d=Math.hypot(e.x-player.x,e.y-player.y);if(d<nd){nd=d;nearest=e}}if(nearest && nd<400){mouse.x=nearest.x;mouse.y=nearest.y}}}origUpdate(dt)};
+
 // Meta-AI via L²_C : accuracy coach
 let metaCoachT=0;
 function metaCoach(msg){metaCoachT=3.0;const el=document.getElementById('metaAI');if(el){el.textContent='Meta AI • '+msg;el.classList.add('show')}}
@@ -325,7 +356,3 @@ requestAnimationFrame(loop);
 // init player for title
 resetPlayer();player.x=W/2;player.y=H/2+80;
 setInterval(()=>{if(state==='title'){addP(W/2+Math.random()*200-100,H/2+Math.random()*100,'#a855f7',1,1.5,20)}},200);
-
-})();</script>
-</body>
-</html>
