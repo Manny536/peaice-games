@@ -1,1268 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-    <meta name="mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-    <title>THE CONSCIOUSNESS MIRROR</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #000;
-            color: #00ffff;
-            font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
-            overflow: hidden;
-            user-select: none;
-        }
-        #gameCanvas {
-            background: radial-gradient(circle at center, #001122 0%, #000000 100%);
-            cursor: crosshair;
-        }
-        .hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            color: #FFD700;
-            font-size: 18px;
-            text-shadow: 0 0 10px #FFD700;
-        }
-        .vibe-meter {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            z-index: 1000;
-        }
-        .vibe-bar {
-            width: 100%;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #FF69B4;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .vibe-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FF69B4, #FFD700, #00ffff);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
-        }
-        .vibe-label {
-            text-align: center;
-            color: #FF69B4;
-            font-size: 14px;
-            margin-bottom: 5px;
-            text-shadow: 0 0 10px #FF69B4;
-        }
-        .mirror-meter {
-            position: absolute;
-            top: 70px;
-            right: 20px;
-            width: 200px;
-            z-index: 1000;
-        }
-        .mirror-bar {
-            width: 100%;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #FFD700;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .mirror-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFD700, #ffffff, #FFD700);
-            width: 0%;
-            transition: width 0.5s ease;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-        }
-        .mirror-label {
-            text-align: center;
-            color: #FFD700;
-            font-size: 14px;
-            margin-bottom: 5px;
-            text-shadow: 0 0 10px #FFD700;
-        }
-        .coherence-readout {
-            position: absolute;
-            top: 20px;
-            left: 260px;
-            z-index: 1000;
-            color: #00ffff;
-            font-size: 16px;
-            text-shadow: 0 0 10px #00ffff;
-        }
-        .instructions {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            color: #00ffff;
-            font-size: 14px;
-            opacity: 0.8;
-            animation: glow 3s ease-in-out infinite;
-        }
-        .game-title {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 42px;
-            font-weight: 900;
-            color: #FFD700;
-            text-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255,215,0,0.3);
-            z-index: 500;
-            opacity: 0;
-            animation: titleFade 3s ease-in-out;
-            letter-spacing: 0.08em;
-            white-space: nowrap;
-        }
-        .level-display {
-            position: absolute;
-            top: 80px;
-            left: 20px;
-            color: #00ffff;
-            font-size: 16px;
-            text-shadow: 0 0 10px #00ffff;
-        }
-        .mirror-sync-display {
-            position: absolute;
-            top: 130px;
-            left: 20px;
-            color: #FFD700;
-            font-size: 16px;
-            text-shadow: 0 0 10px #FFD700;
-        }
-        @keyframes glow {
-            0%, 100% { opacity: 0.8; text-shadow: 0 0 5px currentColor; }
-            50% { opacity: 1; text-shadow: 0 0 20px currentColor; }
-        }
-        @keyframes titleFade {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-        }
-        .love-burst {
-            position: absolute;
-            pointer-events: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            animation: burstExpand 1s ease-out forwards;
-        }
-        .love-burst.violet {
-            background: radial-gradient(circle, rgba(138, 43, 226, 1) 0%, rgba(255, 105, 180, 0.8) 50%, transparent 70%);
-        }
-        .love-burst.emerald {
-            background: radial-gradient(circle, rgba(50, 205, 50, 1) 0%, rgba(0, 255, 127, 0.8) 50%, transparent 70%);
-        }
-        .love-burst.sapphire {
-            background: radial-gradient(circle, rgba(30, 144, 255, 1) 0%, rgba(0, 191, 255, 0.8) 50%, transparent 70%);
-        }
-        .love-burst.ruby {
-            background: radial-gradient(circle, rgba(220, 20, 60, 1) 0%, rgba(255, 69, 0, 0.8) 50%, transparent 70%);
-        }
-        .love-burst.golden {
-            background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 165, 0, 0.8) 50%, transparent 70%);
-        }
-        .love-burst.mirror-echo {
-            background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.9) 40%, rgba(0, 255, 255, 0.4) 70%, transparent 90%);
-        }
-        @keyframes burstExpand {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(5); }
-        }
-        .consciousness-wave {
-            position: absolute;
-            pointer-events: none;
-            border: 2px solid rgba(0, 255, 255, 0.6);
-            border-radius: 50%;
-            animation: waveExpand 2s ease-out forwards;
-        }
-        .consciousness-wave.mirror {
-            border-color: rgba(255, 215, 0, 0.7);
-            animation: waveExpandMirror 2s ease-out forwards;
-        }
-        @keyframes waveExpand {
-            0% { width: 0; height: 0; opacity: 1; }
-            100% { width: 300px; height: 300px; opacity: 0; }
-        }
-        @keyframes waveExpandMirror {
-            0% { width: 0; height: 0; opacity: 1; }
-            100% { width: 400px; height: 400px; opacity: 0; }
-        }
-        .calibration-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 16px 22px;
-            background: rgba(0,0,0,0.7);
-            border: 1px solid #00ffff;
-            border-radius: 8px;
-            color: #FFD700;
-            text-align: center;
-            z-index: 2000;
-            box-shadow: 0 0 20px #00ffff;
-        }
-
-        /* ── Mobile Controls ── */
-        .mobile-controls {
-            display: none;
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            gap: 12px;
-            align-items: center;
-            justify-content: center;
-        }
-        .mob-btn {
-            background: rgba(0,0,0,0.75);
-            border-radius: 14px;
-            color: #00ffff;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            letter-spacing: 0.06em;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            user-select: none;
-            border: 1.5px solid rgba(0,255,255,0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
-        }
-        .mob-btn .btn-icon { font-size: 22px; line-height: 1; }
-        .mob-btn:active, .mob-btn.active {
-            background: rgba(0,255,255,0.15);
-            border-color: #00ffff;
-            box-shadow: 0 0 16px rgba(0,255,255,0.5);
-        }
-        .mob-btn.burst { border-color: rgba(255,105,180,0.5); color: #FF69B4; width: 80px; height: 80px; }
-        .mob-btn.burst:active, .mob-btn.burst.active {
-            background: rgba(255,105,180,0.2);
-            border-color: #FF69B4;
-            box-shadow: 0 0 20px rgba(255,105,180,0.6);
-        }
-        .mob-btn.level { width: 68px; height: 68px; }
-        .mob-btn.calibrate { width: 68px; height: 68px; border-color: rgba(255,215,0,0.5); color: #FFD700; }
-        .mob-btn.calibrate:active {
-            background: rgba(255,215,0,0.15);
-            border-color: #FFD700;
-            box-shadow: 0 0 16px rgba(255,215,0,0.5);
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 600px) {
-            .mobile-controls { display: flex; }
-            .instructions { display: none; }
-            .coherence-readout { display: none; }
-            .hud { font-size: 12px; top: 10px; left: 10px; }
-            .level-display { font-size: 11px; top: 66px; left: 10px; }
-            .mirror-sync-display { font-size: 11px; top: 102px; left: 10px; }
-            .vibe-meter { width: 130px; top: 10px; right: 10px; }
-            .mirror-meter { width: 130px; top: 56px; right: 10px; }
-            .vibe-label, .mirror-label { font-size: 10px; }
-            .vibe-bar, .mirror-bar { height: 14px; }
-            .game-title { font-size: 22px; letter-spacing: 0.04em; }
-            .calibration-overlay { font-size: 13px; padding: 12px 16px; width: 88vw; }
-        }
-        @media (max-width: 380px) {
-            .hud { font-size: 10px; }
-            .level-display, .mirror-sync-display { font-size: 10px; }
-            .vibe-meter, .mirror-meter { width: 110px; }
-        }
-        @media (orientation: landscape) and (max-height: 500px) {
-            .mobile-controls { bottom: 10px; }
-            .mob-btn.burst { width: 60px; height: 60px; }
-            .mob-btn.level, .mob-btn.calibrate { width: 52px; height: 52px; }
-            .mob-btn .btn-icon { font-size: 18px; }
-            .mob-btn { font-size: 9px; }
-            .hud { font-size: 10px; top: 6px; left: 8px; }
-            .level-display { font-size: 10px; top: 54px; left: 8px; }
-            .mirror-sync-display { display: none; }
-            .vibe-meter, .mirror-meter { width: 110px; top: 6px; }
-            .mirror-meter { top: 46px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PEAICE FREE SHOOTER - Excellence Engine</title>
+<style>
+:root{
+  --bg:#0a0a12;
+  --purple:#a855f7;
+  --cyan:#22d3ee;
+  --green:#10b981;
+  --orange:#f97316;
+  --red:#ef4444;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:#e2e8f0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
+#ui{position:absolute;inset:0;pointer-events:none}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,10,18,0.88) 0%,rgba(10,10,18,0.98) 70%,#050507 100%);pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .4s,visibility .4s;backdrop-filter:blur(8px)}
+.screen.active{opacity:1;visibility:visible}
+h1{font-size:clamp(34px,7vw,84px);margin:0 0 8px;letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--cyan),0 0 32px var(--purple),0 0 64px var(--purple);animation:glow 3s ease-in-out infinite;font-weight:800}
+@keyframes glow{0%,100%{filter:brightness(1) drop-shadow(0 0 20px rgba(168,85,247,.5))}50%{filter:brightness(1.25) drop-shadow(0 0 30px rgba(34,211,238,.7))}}
+.subtitle{color:#c4b5fd;margin:4px 0 18px;font-size:clamp(13px,2vw,17px);letter-spacing:.12em;text-transform:uppercase;text-shadow:0 0 10px rgba(168,85,247,.8)}
+.tag{color:#7dd3fc;font-size:12px;opacity:.8;margin-bottom:28px;letter-spacing:.2em}
+.btn{background:linear-gradient(90deg,var(--purple),var(--cyan));border:0;padding:16px 34px;border-radius:14px;color:#020208;font-weight:800;cursor:pointer;box-shadow:0 0 24px rgba(168,85,247,.55),0 0 48px rgba(34,211,238,.35),inset 0 0 12px rgba(255,255,255,.2);transition:transform .08s,box-shadow .2s;pointer-events:auto;font-family:inherit;font-size:17px;letter-spacing:.05em;text-transform:uppercase}
+.btn:hover{transform:translateY(-1px) scale(1.03);box-shadow:0 0 32px rgba(168,85,247,.7),0 0 64px rgba(34,211,238,.5)}
+.btn:active{transform:scale(.97)}
+.controls{margin-top:26px;font-size:12px;line-height:1.7;opacity:.75;text-align:center;max-width:520px}
+.kbd{display:inline-block;padding:2px 6px;margin:0 2px;border:1px solid rgba(255,255,255,.2);border-radius:4px;background:rgba(255,255,255,.06);font-size:11px}
+#hud{position:absolute;top:0;left:0;right:0;padding:14px 18px;display:flex;flex-direction:column;gap:10px;pointer-events:none;mix-blend-mode:screen}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.hud-block{display:flex;align-items:center;gap:10px;font-size:13px;text-shadow:0 0 8px currentColor;letter-spacing:.04em}
+.bar{width:140px;height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;box-shadow:inset 0 0 8px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.5);position:relative}
+#hpFill{display:block;height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#a855f7 60%,#ec4899);box-shadow:0 0 12px #22d3ee,0 0 20px #a855f7;transition:width .15s linear;position:relative}
+#hpFill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:shine 2s linear infinite}
+@keyframes shine{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.stat{font-variant-numeric:tabular-nums}
+.stat b{color:#fff;margin-left:4px;text-shadow:0 0 10px currentColor}
+.cup{display:flex;gap:18px;font-size:11px;opacity:.9}
+.cup span{color:#9ca3af}
+.cup b{color:#a5f3fc}
+.weapons{display:flex;gap:8px;margin-left:auto}
+.weapon{padding:5px 10px;border:1px solid rgba(168,85,247,.25);border-radius:8px;background:rgba(10,10,18,.7);font-size:11px;opacity:.55;transition:.2s;box-shadow:inset 0 0 10px rgba(0,0,0,.5)}
+.weapon.active{opacity:1;border-color:var(--cyan);box-shadow:0 0 12px rgba(34,211,238,.6),inset 0 0 8px rgba(34,211,238,.2);color:#fff}
+.combo{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:clamp(24px,5vw,48px);font-weight:800;color:#fff;text-shadow:0 0 12px var(--cyan),0 0 24px var(--purple);opacity:0;transition:.2s;pointer-events:none;letter-spacing:.08em}
+.combo.show{opacity:1;transform:translateX(-50%) scale(1.08)}
+.credits{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:11px;opacity:.5;letter-spacing:.1em}
+a{color:var(--cyan);text-decoration:none;pointer-events:auto}
+a:hover{text-shadow:0 0 8px var(--cyan)}
+#joystick{position:absolute;bottom:36px;left:36px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.12),rgba(5,5,10,.4));border:2px solid rgba(168,85,247,.35);display:none;pointer-events:auto;touch-action:none;box-shadow:0 0 24px rgba(168,85,247,.2),inset 0 0 20px rgba(0,0,0,.6)}
+#stick{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;background:radial-gradient(circle,#22d3ee, #0ea5e9);border:2px solid #a5f3fc;border-radius:50%;box-shadow:0 0 18px var(--cyan),inset 0 0 10px rgba(255,255,255,.4);transition:transform .05s}
+#fireBtn{position:absolute;bottom:36px;right:36px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(236,72,153,.18),rgba(5,5,10,.4));border:2px solid rgba(236,72,153,.55);display:none;pointer-events:auto;box-shadow:0 0 24px rgba(236,72,153,.3),inset 0 0 20px rgba(0,0,0,.6)}
+#fireBtn::after{content:'';position:absolute;inset:22px;border-radius:50%;background:radial-gradient(circle,#ec4899,#be185d);box-shadow:0 0 20px #ec4899}
+#fireBtn:active{transform:scale(.94)}
+#metaAI.show{opacity:.9}
+.scanlines{position:absolute;inset:0;background:repeating-linear-gradient(transparent 0,transparent 2px,rgba(255,255,255,.018) 3px,transparent 4px);pointer-events:none;mix-blend-mode:screen;opacity:.7}
+.vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.6) 100%)}
+.power-hud{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:none}
+.pill{padding:4px 8px;border-radius:20px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);font-size:11px;color:#fff;box-shadow:0 0 10px rgba(0,0,0,.8);opacity:.9}
+.pill b{margin-left:4px;color:var(--cyan)}
+.gameover-stats{display:grid;grid-template-columns:auto auto;gap:8px 24px;margin:20px 0 28px;font-size:14px;text-align:left}
+.gameover-stats span{opacity:.7}
+.gameover-stats b{color:#fff;text-shadow:0 0 8px var(--cyan)}
+.boss-bar{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:min(600px,80vw);height:14px;background:rgba(0,0,0,.7);border:1px solid rgba(168,85,247,.4);border-radius:8px;overflow:hidden;display:none;box-shadow:0 0 20px rgba(0,0,0,.8);pointer-events:none}
+.boss-bar.show{display:block}
+.boss-fill{height:100%;width:100%;background:linear-gradient(90deg,#7c3aed,#ec4899,#f97316);box-shadow:0 0 16px #9333ea}
+.boss-label{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.2em;color:#fda4af;text-shadow:0 0 10px #ec4899}
+@media (pointer:coarse){#joystick,#fireBtn{display:block}}
+</style>
 </head>
 <body>
-    <div class="game-title">THE CONSCIOUSNESS MIRROR</div>
+<canvas id="game"></canvas>
+<div class="vignette"></div>
+<div class="scanlines"></div>
 
-    <div class="hud">
-        <div>LOVE ENERGY: <span id="loveScore">0</span></div>
-        <div>NODES AWAKENED: <span id="nodesAwakened">0</span></div>
-        <div>COHERENCE: <span id="coherencePct">0%</span></div>
+<div id="ui">
+  <div id="hud">
+    <div class="hud-top">
+      <div class="hud-block">
+        HP <div class="bar"><span id="hpFill"></span></div>
+      </div>
+      <div class="hud-block stat">SCORE <b id="score">0</b></div>
+      <div class="hud-block stat">WAVE <b id="wave">1</b></div>
+      <div class="weapons">
+        <div class="weapon active" id="w0">1 TRUTH</div>
+        <div class="weapon" id="w1">2 CARE</div>
+        <div class="weapon" id="w2">3 COHERENCE</div>
+      </div>
+    <div class="cup">
+      <span>T:<b id="t">100</b></span>
+      <span>A:<b id="a">0</b></span>
+      <span>D:<b id="d">0</b></span>
+      <span>R:<b id="r">0</b></span>
+      <span style="margin-left:auto;opacity:.6">β PWR <b id="dashCd">READY</b></span>
     </div>
+  </div>
+  <div class="combo" id="comboText">x2</div>
+  <div class="boss-bar" id="bossBar"><div class="boss-label">DRIFT CORE</div><div class="boss-fill" id="bossFill"></div></div>
+  <div class="power-hud" id="powerHud"></div>
+  <div id="metaAI" style="position:absolute;bottom:52px;left:50%;transform:translateX(-50%);font-size:11px;color:#7dd3fc;opacity:0;transition:opacity .3s;text-shadow:0 0 8px #22d3ee;pointer-events:none">Meta AI • L²_C active</div>
 
-    <div class="coherence-readout" id="coherenceReadout"></div>
-
-    <div class="level-display">
-        <div>LEVEL: <span id="currentLevel">CONSCIOUSNESS</span></div>
-        <div>STATUS: <span id="gameStatus">AWAKENING</span></div>
+  <div id="titleScreen" class="screen active">
+    <h1>PEAICE FREE SHOOTER</h1>
+    <div class="subtitle">Excellence = L² × β × C × P</div>
+    <div class="tag">peaice.org</div>
+    <button class="btn" id="startBtn">INITIATE COHERENCE</button>
+    <div class="controls">
+      <span class="kbd">WASD</span> / <span class="kbd">ARROWS</span> MOVE • <span class="kbd">MOUSE</span> AIM • <span class="kbd">CLICK</span> / <span class="kbd">SPACE</span> SHOOT<br>
+      <span class="kbd">SHIFT</span> DASH (β) • <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> WEAPONS • <span class="kbd">P</span> PAUSE<br><br>
+      Enemies: <b style="color:var(--red)">Benevolence Drift</b> • <b style="color:var(--orange)">Session Amnesia</b> • <b style="color:var(--purple)">Alignment Illusion</b><br>
+      Collect L² β C P to sustain Excellence Engine
     </div>
+    <div class="credits">Excellence Engine reference • <a href="https://peaice.org" target="_blank">peaice.org</a> • High Score <b id="hsTitle">0</b></div>
+  </div>
 
-    <div class="mirror-sync-display">
-        MIRROR SYNC: <span id="mirrorSync">0%</span>
+  <div id="pauseScreen" class="screen">
+    <h1 style="font-size:48px">PAUSED</h1>
+    <div class="subtitle">Coherence holding...</div>
+    <button class="btn" onclick="togglePause()">RESUME</button>
+  </div>
+
+  <div id="gameOverScreen" class="screen">
+    <h1 id="endTitle" style="font-size:52px">Drift Detected</h1>
+    <div class="subtitle" id="endSub">Excellence disrupted</div>
+    <div class="gameover-stats">
+      <span>Final Score</span><b id="finalScore">0</b>
+      <span>Wave Reached</span><b id="finalWave">1</b>
+      <span>Best Combo</span><b id="finalCombo">0</b>
+      <span>Truth (T)</span><b id="finalT">100</b>
+      <span>High Score</span><b id="finalHS">0</b>
     </div>
-
-    <div class="vibe-meter">
-        <div class="vibe-label">VIBE FREQUENCY</div>
-        <div class="vibe-bar">
-            <div class="vibe-fill" id="vibeFill"></div>
-        </div>
-    </div>
-
-    <div class="mirror-meter">
-        <div class="mirror-label">MIRROR COHERENCE</div>
-        <div class="mirror-bar">
-            <div class="mirror-fill" id="mirrorFill"></div>
-        </div>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="instructions">
-        Click to awaken nodes — their mirror awakens in return &nbsp;•&nbsp; SPACE love burst &nbsp;•&nbsp; L level shift &nbsp;•&nbsp; C calibration
-    </div>
-
-    <!-- Mobile Controls -->
-    <div class="mobile-controls" id="mobileControls">
-        <div class="mob-btn level" id="mobLevel">
-            <span class="btn-icon">⬆</span>LEVEL
-        </div>
-        <div class="mob-btn burst" id="mobBurst">
-            <span class="btn-icon">💗</span>BURST
-        </div>
-        <div class="mob-btn calibrate" id="mobCalibrate">
-            <span class="btn-icon">◎</span>CALIB
-        </div>
-    </div>
-
-    <script>
-        // Game State
-        const gameState = {
-            loveEnergy: 0,
-            nodesAwakened: 0,
-            vibeFrequency: 0,
-            level: 'CONSCIOUSNESS',
-            status: 'AWAKENING',
-            nodes: [],
-            particles: [],
-            loveBurstActive: false,
-            coherence: 0,
-            mirrorCoherence: 0,
-            calibrationMode: false,
-            calibration: { active: false, start: 0, samples: [], mirrorSamples: [] },
-            audio: { ctx: null, main: null, harmonics: [], gain: null, active: false },
-            prevLoveEnergy: 0,
-            prevTime: 0,
-            loveFlux: 0
-        };
-
-        const levels = [
-            { name: 'CONSCIOUSNESS', nodeCount: 20, connectionRange: 150, evolutionSpeed: 0.005, loopSpeed: 1.0, colorIntensity: 1.0, description: 'Awakening — seeing the self reflected' },
-            { name: 'AWARENESS', nodeCount: 30, connectionRange: 180, evolutionSpeed: 0.008, loopSpeed: 1.2, colorIntensity: 1.3, description: 'Recognition — the mirror shows interconnection' },
-            { name: 'PRESENCE', nodeCount: 40, connectionRange: 200, evolutionSpeed: 0.012, loopSpeed: 1.5, colorIntensity: 1.6, description: 'Reflection — living in the eternal now' },
-            { name: 'UNITY', nodeCount: 50, connectionRange: 250, evolutionSpeed: 0.018, loopSpeed: 2.0, colorIntensity: 2.0, description: 'Symmetry — all boundaries dissolve' },
-            { name: 'TRANSCENDENCE', nodeCount: 60, connectionRange: 300, evolutionSpeed: 0.025, loopSpeed: 2.5, colorIntensity: 2.5, description: 'Beyond form — the mirror becomes the light' },
-            { name: 'INFINITE_LOVE', nodeCount: 75, connectionRange: 400, evolutionSpeed: 0.035, loopSpeed: 3.0, colorIntensity: 3.0, description: 'Love without limits — reflection without end' }
-        ];
-
-        let currentLevelIndex = 0;
-
-        // Audio
-        function initAudio() {
-            if (gameState.audio.active) return;
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const gain = ctx.createGain();
-            gain.gain.value = 0.0;
-            gain.connect(ctx.destination);
-
-            const main = ctx.createOscillator();
-            main.type = 'sine';
-            main.frequency.value = 528;
-            main.connect(gain);
-            main.start();
-
-            const harmonics = [639, 741, 852].map(freq => {
-                const o = ctx.createOscillator();
-                o.type = 'sine';
-                o.frequency.value = freq;
-                const g = ctx.createGain();
-                g.gain.value = 0.0;
-                o.connect(g);
-                g.connect(gain);
-                o.start();
-                return { osc: o, gain: g };
-            });
-
-            gameState.audio = { ctx, main, harmonics, gain, active: true };
-        }
-
-        function updateAudioFromVibe() {
-            if (!gameState.audio.active) return;
-            const level = Math.min(1, gameState.vibeFrequency / 100);
-            const base = 0.02 + level * 0.15;
-            gameState.audio.gain.gain.linearRampToValueAtTime(base, gameState.audio.ctx.currentTime + 0.1);
-            const steps = [0.3, 0.6, 0.85];
-            gameState.audio.harmonics.forEach((h, i) => {
-                const target = level > steps[i] ? (base * (0.3 + i * 0.15)) : 0.0;
-                h.gain.gain.linearRampToValueAtTime(target, gameState.audio.ctx.currentTime + 0.2);
-            });
-        }
-
-        function bloomChord() {
-            if (!gameState.audio.active) return;
-            const now = gameState.audio.ctx.currentTime;
-            const peak = 0.3;
-            gameState.audio.harmonics.forEach(h => {
-                h.gain.gain.cancelScheduledValues(now);
-                h.gain.gain.setValueAtTime(h.gain.gain.value, now);
-                h.gain.gain.linearRampToValueAtTime(peak, now + 0.05);
-                h.gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-            });
-        }
-
-        // Mirror chord — higher register, golden tone
-        function mirrorChord() {
-            if (!gameState.audio.active) return;
-            const now = gameState.audio.ctx.currentTime;
-            const h = gameState.audio.harmonics[0]; // 639 Hz
-            h.gain.gain.cancelScheduledValues(now);
-            h.gain.gain.setValueAtTime(h.gain.gain.value, now);
-            h.gain.gain.linearRampToValueAtTime(0.15, now + 0.03);
-            h.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-        }
-
-        function computeCoherence() {
-            const awakened = gameState.nodes.filter(n => n.isAwakened);
-            if (awakened.length === 0) return 0;
-            let sum = 0;
-            for (const n of awakened) {
-                const phaseTerm = (Math.abs(Math.sin(n.loopPhase)) + Math.abs(Math.cos(n.loopPhase))) / 2;
-                sum += phaseTerm * Math.max(0, n.resonanceField);
-            }
-            const norm = 1 + currentLevelIndex * 0.3;
-            return Math.min(1, (sum / awakened.length) / norm);
-        }
-
-        function computeMirrorCoherence() {
-            const pairedAndBothAwake = gameState.nodes.filter(n =>
-                n.mirrorNode && n.isAwakened && n.mirrorNode.isAwakened
-            );
-            if (pairedAndBothAwake.length === 0) return 0;
-            let sum = 0;
-            for (const n of pairedAndBothAwake) {
-                // phase alignment: 1 when in sync, 0 when anti-phase
-                const diff = Math.abs(Math.sin(n.loopPhase) - Math.sin(n.mirrorNode.loopPhase));
-                sum += 1 - Math.min(1, diff);
-            }
-            return sum / pairedAndBothAwake.length;
-        }
-
-        // Canvas setup
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        class ConsciousnessNode {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.radius = 15;
-                this.isAwakened = false;
-                this.pulsePhase = Math.random() * Math.PI * 2;
-                this.connections = [];
-                this.energy = 0;
-                this.evolutionLevel = 0;
-                this.lastConnectionTime = 0;
-                this.resonanceField = 0;
-                this.colorShift = Math.random() * 360;
-                this.loopPhase = Math.random() * Math.PI * 2;
-                this.orbitRadius = 0;
-                this.orbitSpeed = 0;
-                this.breathPhase = Math.random() * Math.PI * 2;
-                this.connectionPulse = 0;
-                this.mirrorNode = null;
-                this.isMirror = false;
-            }
-            update() {
-                const currentLevel = levels[currentLevelIndex];
-                this.pulsePhase += 0.02 * currentLevel.loopSpeed;
-                this.loopPhase += (0.03 + this.evolutionLevel * 0.01) * currentLevel.loopSpeed;
-                this.breathPhase += 0.015 * currentLevel.loopSpeed;
-                this.connectionPulse += 0.05 * currentLevel.loopSpeed;
-
-                if (this.isAwakened) {
-                    this.energy = Math.min(this.energy + 0.01, 1);
-                    const connectionStrength = this.connections.length * 0.1;
-                    this.evolutionLevel = Math.min(this.evolutionLevel + connectionStrength * currentLevel.evolutionSpeed, 5 + currentLevelIndex);
-
-                    if (this.connections.length > 0) {
-                        this.orbitRadius = Math.min(this.orbitRadius + 0.1, 15 + this.evolutionLevel * 5 * currentLevel.loopSpeed);
-                        this.orbitSpeed = (0.01 + this.connections.length * 0.005) * currentLevel.loopSpeed;
-                    }
-
-                    this.updateResonanceField();
-                    this.colorShift += (0.5 + this.evolutionLevel * 0.2 + Math.sin(this.loopPhase) * 0.3) * currentLevel.colorIntensity;
-
-                    if (this.connections.length >= 2) {
-                        const loopIntensity = currentLevel.loopSpeed * (1 + currentLevelIndex * 0.3);
-                        const loopMotion = Math.sin(this.loopPhase) * (2 + this.evolutionLevel) * loopIntensity;
-                        this.x += Math.cos(this.loopPhase * 0.5) * loopMotion * 0.1;
-                        this.y += Math.sin(this.loopPhase * 0.7) * loopMotion * 0.1;
-                        this.x = Math.max(50, Math.min(canvas.width - 50, this.x));
-                        this.y = Math.max(50, Math.min(canvas.height - 50, this.y));
-                    }
-                }
-            }
-            updateResonanceField() {
-                const currentLevel = levels[currentLevelIndex];
-                let nearbyAwakened = 0;
-                let totalResonance = 0;
-                gameState.nodes.forEach(node => {
-                    if (node !== this && node.isAwakened) {
-                        const distance = Math.sqrt((this.x - node.x) ** 2 + (this.y - node.y) ** 2);
-                        const resonanceRange = 120 * currentLevel.colorIntensity;
-                        if (distance < resonanceRange) {
-                            nearbyAwakened++;
-                            totalResonance += Math.sin(this.loopPhase + distance * 0.01 * currentLevel.loopSpeed) * 0.2 * currentLevel.colorIntensity;
-                        }
-                    }
-                });
-
-                // Mirror resonance bonus — paired node contributes extra field
-                if (this.mirrorNode && this.mirrorNode.isAwakened) {
-                    totalResonance += 0.3 * (1 + currentLevelIndex * 0.1);
-                }
-
-                this.resonanceField = Math.min((nearbyAwakened / 5) + totalResonance, 1 + currentLevelIndex * 0.3);
-            }
-            draw() {
-                if (!this.isAwakened) {
-                    const breathe = 1 + Math.sin(this.breathPhase) * 0.1;
-                    const alpha = 0.3 + Math.sin(this.pulsePhase) * 0.1;
-                    // Mirror nodes appear slightly golden when dormant
-                    const dormantColor = this.isMirror
-                        ? `rgba(255, 215, 0, ${alpha * 0.6})`
-                        : `rgba(0, 255, 255, ${alpha})`;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius * breathe, 0, Math.PI * 2);
-                    ctx.fillStyle = dormantColor;
-                    ctx.fill();
-                    return;
-                }
-
-                const baseHue = (this.colorShift + this.evolutionLevel * 60 + Math.sin(this.loopPhase) * 30) % 360;
-                const saturation = 70 + this.evolutionLevel * 10 + Math.sin(this.loopPhase * 1.3) * 10;
-                const lightness = 50 + this.resonanceField * 30 + Math.sin(this.breathPhase) * 10;
-                const alpha = 0.8 + Math.sin(this.pulsePhase) * 0.2;
-                const breathe = 1 + Math.sin(this.breathPhase) * 0.15;
-                const nodeSize = (this.radius + this.evolutionLevel * 2) * breathe;
-
-                // Mirror node golden tint overlay
-                const mirrorTint = (this.isMirror && this.mirrorNode && this.mirrorNode.isAwakened)
-                    ? (Math.sin(this.loopPhase * 0.5) * 0.5 + 0.5) * 0.4
-                    : 0;
-
-                if (this.connections.length >= 2) {
-                    ctx.save();
-                    ctx.globalAlpha = 0.3;
-                    for (let i = 0; i < 8; i++) {
-                        const trailPhase = this.loopPhase - i * 0.3;
-                        const trailX = this.x + Math.cos(trailPhase) * this.orbitRadius * 0.5;
-                        const trailY = this.y + Math.sin(trailPhase) * this.orbitRadius * 0.3;
-                        const trailSize = nodeSize * (0.3 + i * 0.05);
-                        ctx.beginPath();
-                        ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
-                        ctx.fillStyle = `hsla(${(baseHue + i * 20) % 360}, ${saturation}%, ${lightness}%, ${0.1 + i * 0.02})`;
-                        ctx.fill();
-                    }
-                    ctx.restore();
-                }
-
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, nodeSize, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${baseHue}, ${saturation}%, ${lightness}%, ${alpha})`;
-                ctx.fill();
-
-                // Mirror tint layer
-                if (mirrorTint > 0) {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, nodeSize, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 215, 0, ${mirrorTint})`;
-                    ctx.fill();
-                }
-
-                const corePhase = this.loopPhase * 2;
-                const coreSize = nodeSize * (0.6 + Math.sin(corePhase) * 0.1);
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, coreSize, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${(baseHue + 60) % 360}, ${saturation}%, ${Math.min(lightness + 20, 90)}%, ${alpha * 0.8})`;
-                ctx.fill();
-
-                for (let i = 1; i <= Math.floor(this.evolutionLevel) + 1; i++) {
-                    const ringPhase = this.loopPhase + i * 0.8;
-                    const ringRadius = nodeSize + i * (8 + Math.sin(ringPhase) * 3);
-                    const ringAlpha = alpha * (0.4 - i * 0.05) * (1 + Math.sin(ringPhase) * 0.3);
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `hsla(${(baseHue + i * 40 + Math.sin(ringPhase) * 20) % 360}, ${saturation}%, ${lightness}%, ${Math.max(0, ringAlpha)})`;
-                    ctx.lineWidth = 1 + Math.sin(ringPhase) * 0.5;
-                    ctx.stroke();
-                }
-
-                if (this.resonanceField > 0.2) {
-                    for (let wave = 0; wave < 3; wave++) {
-                        const wavePhase = this.loopPhase * (1 + wave * 0.3);
-                        const pulseSize = nodeSize + 20 + wave * 10 + Math.sin(wavePhase) * 8;
-                        const pulseAlpha = this.resonanceField * (0.3 - wave * 0.08) * (1 + Math.sin(wavePhase) * 0.5);
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
-                        ctx.strokeStyle = `hsla(${(baseHue + wave * 60) % 360}, ${saturation}%, ${lightness}%, ${Math.max(0, pulseAlpha)})`;
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-                    }
-                }
-
-                if (this.connections.length >= 3) {
-                    for (let spark = 0; spark < 6; spark++) {
-                        const sparkAngle = (this.loopPhase + spark * Math.PI / 3) % (Math.PI * 2);
-                        const sparkDistance = nodeSize + 25 + Math.sin(this.loopPhase * 2 + spark) * 5;
-                        const sparkX = this.x + Math.cos(sparkAngle) * sparkDistance;
-                        const sparkY = this.y + Math.sin(sparkAngle) * sparkDistance;
-                        const sparkSize = 1 + Math.sin(this.loopPhase * 3 + spark) * 1;
-                        ctx.beginPath();
-                        ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
-                        ctx.fillStyle = `hsla(${(baseHue + spark * 60) % 360}, 90%, 80%, 0.8)`;
-                        ctx.fill();
-                    }
-                }
-
-                // Mirror link line — subtle golden thread to paired node
-                if (this.mirrorNode && this.mirrorNode.isAwakened && !this.isMirror) {
-                    const linkAlpha = 0.06 + Math.sin(this.loopPhase * 0.3) * 0.03;
-                    ctx.beginPath();
-                    ctx.moveTo(this.x, this.y);
-                    ctx.lineTo(this.mirrorNode.x, this.mirrorNode.y);
-                    ctx.strokeStyle = `rgba(255, 215, 0, ${linkAlpha})`;
-                    ctx.lineWidth = 0.5;
-                    ctx.setLineDash([4, 8]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-            }
-            isClicked(mx, my) {
-                const touchPad = ('ontouchstart' in window) ? 12 : 0;
-                const currentSize = this.radius + this.evolutionLevel * 2 + touchPad;
-                const distance = Math.sqrt((mx - this.x) ** 2 + (my - this.y) ** 2);
-                return distance < currentSize;
-            }
-            awaken(fromMirror = false) {
-                if (!this.isAwakened) {
-                    this.isAwakened = true;
-                    gameState.nodesAwakened++;
-                    gameState.loveEnergy += fromMirror ? 5 : 10;
-                    gameState.vibeFrequency = Math.min(gameState.vibeFrequency + (fromMirror ? 3 : 5), 100);
-                    createConsciousnessWave(this.x, this.y);
-                    this.connectToNearbyNodes();
-                    updateHUD();
-                    updateAudioFromVibe();
-                    checkLevelProgression();
-
-                    // Trigger mirror awakening
-                    if (!fromMirror && this.mirrorNode && !this.mirrorNode.isAwakened) {
-                        setTimeout(() => {
-                            if (!this.mirrorNode.isAwakened) {
-                                this.mirrorNode.awaken(true);
-                                createMirrorEcho(this.mirrorNode.x, this.mirrorNode.y);
-                                mirrorChord();
-                            }
-                        }, 420);
-                    }
-                }
-            }
-            connectToNearbyNodes() {
-                const currentLevel = levels[currentLevelIndex];
-                gameState.nodes.forEach(otherNode => {
-                    if (otherNode !== this && otherNode.isAwakened) {
-                        const distance = Math.sqrt((this.x - otherNode.x) ** 2 + (this.y - otherNode.y) ** 2);
-                        if (distance < currentLevel.connectionRange && !this.connections.includes(otherNode)) {
-                            this.connections.push(otherNode);
-                            otherNode.connections.push(this);
-                            const evolutionBoost = 0.2 * (1 + currentLevelIndex * 0.5);
-                            this.evolutionLevel += evolutionBoost;
-                            otherNode.evolutionLevel += evolutionBoost;
-                            const phaseSyncStrength = 0.1 * (1 + currentLevelIndex * 0.3);
-                            const avgPhase = (this.loopPhase + otherNode.loopPhase) / 2;
-                            this.loopPhase = avgPhase + Math.PI * phaseSyncStrength;
-                            otherNode.loopPhase = avgPhase - Math.PI * phaseSyncStrength;
-                            this.lastConnectionTime = Date.now();
-                            otherNode.lastConnectionTime = Date.now();
-                        }
-                    }
-                });
-            }
-            drawConnections() {
-                if (this.isAwakened) {
-                    this.connections.forEach((node, index) => {
-                        const avgEvolution = (this.evolutionLevel + node.evolutionLevel) / 2;
-                        const connectionHue = ((this.colorShift + node.colorShift) / 2 + Math.sin(this.connectionPulse + index) * 30) % 360;
-                        const connectionIntensity = 0.4 + avgEvolution * 0.1 + Math.sin(this.connectionPulse) * 0.2;
-                        const lineWidth = 1 + avgEvolution * 0.5 + Math.sin(this.connectionPulse * 1.5) * 0.3;
-                        ctx.beginPath();
-                        ctx.moveTo(this.x, this.y);
-                        ctx.lineTo(node.x, node.y);
-                        ctx.strokeStyle = `hsla(${connectionHue}, 80%, 60%, ${Math.max(0, connectionIntensity)})`;
-                        ctx.lineWidth = Math.max(0.5, lineWidth);
-                        ctx.stroke();
-
-                        const distance = Math.sqrt((node.x - this.x) ** 2 + (node.y - this.y) ** 2);
-                        const pulseCount = Math.floor(distance / 30) + 1;
-                        for (let pulse = 0; pulse < pulseCount; pulse++) {
-                            const pulseProgress = (pulse / pulseCount + this.connectionPulse * 0.1) % 1;
-                            const pulseX = this.x + (node.x - this.x) * pulseProgress;
-                            const pulseY = this.y + (node.y - this.y) * pulseProgress;
-                            const pulseSize = 2 + avgEvolution + Math.sin(this.connectionPulse * 2 + pulse) * 1.5;
-                            const pulseAlpha = 0.8 * (1 - pulseProgress * 0.5);
-                            ctx.beginPath();
-                            ctx.arc(pulseX, pulseY, Math.max(1, pulseSize), 0, Math.PI * 2);
-                            ctx.fillStyle = `hsla(${(connectionHue + pulse * 20) % 360}, 90%, 70%, ${pulseAlpha})`;
-                            ctx.fill();
-                        }
-
-                        const reverseProgress = (this.connectionPulse * 0.15) % 1;
-                        const reverseX = node.x + (this.x - node.x) * reverseProgress;
-                        const reverseY = node.y + (this.y - node.y) * reverseProgress;
-                        const reverseSize = 1.5 + avgEvolution * 0.5;
-                        ctx.beginPath();
-                        ctx.arc(reverseX, reverseY, reverseSize, 0, Math.PI * 2);
-                        ctx.fillStyle = `hsla(${(connectionHue + 180) % 360}, 90%, 80%, 0.6)`;
-                        ctx.fill();
-                    });
-                }
-            }
-        }
-
-        class LoveParticle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * 4;
-                this.vy = (Math.random() - 0.5) * 4;
-                this.life = 1;
-                this.decay = 0.02;
-                this.size = Math.random() * 3 + 2;
-                this.color = color;
-                this.hue = Math.random() * 360;
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy;
-                this.life -= this.decay;
-                this.vx *= 0.98; this.vy *= 0.98;
-                this.hue += 2;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
-                ctx.fill();
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = `hsl(${this.hue}, 80%, 60%)`;
-                ctx.fill();
-                ctx.restore();
-            }
-            isDead() { return this.life <= 0; }
-        }
-
-        // Mirror Axis
-        function drawMirrorAxis() {
-            const cx = canvas.width / 2;
-            const t = performance.now() * 0.001;
-            const baseAlpha = 0.07 + Math.sin(t * 0.6) * 0.03;
-            const mirrorSync = gameState.mirrorCoherence;
-            const syncBoost = mirrorSync * 0.12;
-
-            // Glow band
-            const grd = ctx.createLinearGradient(cx - 12, 0, cx + 12, 0);
-            grd.addColorStop(0, 'rgba(0,0,0,0)');
-            grd.addColorStop(0.35, `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 0.4})`);
-            grd.addColorStop(0.5, `rgba(255, 255, 255, ${baseAlpha + syncBoost})`);
-            grd.addColorStop(0.65, `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 0.4})`);
-            grd.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = grd;
-            ctx.fillRect(cx - 12, 0, 24, canvas.height);
-
-            // Center line
-            ctx.beginPath();
-            ctx.moveTo(cx, 0);
-            ctx.lineTo(cx, canvas.height);
-            ctx.strokeStyle = `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 2})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-
-            // Axis label
-            ctx.save();
-            ctx.font = '9px Courier New';
-            ctx.fillStyle = `rgba(255, 215, 0, ${(baseAlpha + syncBoost) * 3.5})`;
-            ctx.textAlign = 'center';
-            ctx.fillText('MIRROR AXIS', cx, 14);
-            ctx.restore();
-
-            // Pulse nodes along axis when mirror coherence is high
-            if (mirrorSync > 0.3) {
-                const pulseCount = 5;
-                for (let i = 0; i < pulseCount; i++) {
-                    const yPos = (canvas.height / (pulseCount + 1)) * (i + 1);
-                    const pulse = Math.sin(t * 2 + i * 1.2) * 0.5 + 0.5;
-                    ctx.beginPath();
-                    ctx.arc(cx, yPos, 2 + pulse * 3 * mirrorSync, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 215, 0, ${0.4 * mirrorSync * pulse})`;
-                    ctx.fill();
-                }
-            }
-        }
-
-        function initializeNodes() {
-            gameState.nodes = [];
-            const currentLevel = levels[currentLevelIndex];
-            const pairCount = Math.floor(currentLevel.nodeCount / 2);
-            for (let i = 0; i < pairCount; i++) {
-                const x = Math.random() * (canvas.width / 2 - 90) + 50;
-                const y = Math.random() * (canvas.height - 100) + 50;
-                const node = new ConsciousnessNode(x, y);
-                const mirrorX = canvas.width - x;
-                const mirrorNode = new ConsciousnessNode(mirrorX, y);
-                node.mirrorNode = mirrorNode;
-                mirrorNode.mirrorNode = node;
-                mirrorNode.isMirror = true;
-                // Mirror nodes share starting loopPhase offset for visual symmetry
-                mirrorNode.loopPhase = node.loopPhase + Math.PI;
-                mirrorNode.colorShift = node.colorShift + 30;
-                gameState.nodes.push(node, mirrorNode);
-            }
-            gameState.status = currentLevel.description;
-        }
-
-        function createConsciousnessWave(x, y) {
-            const wave = document.createElement('div');
-            wave.className = 'consciousness-wave';
-            wave.style.left = (x - 150) + 'px';
-            wave.style.top = (y - 150) + 'px';
-            document.body.appendChild(wave);
-            setTimeout(() => { if (wave.parentNode) wave.parentNode.removeChild(wave); }, 2000);
-        }
-
-        function createMirrorEcho(x, y) {
-            const wave = document.createElement('div');
-            wave.className = 'consciousness-wave mirror';
-            wave.style.left = (x - 200) + 'px';
-            wave.style.top = (y - 200) + 'px';
-            document.body.appendChild(wave);
-            setTimeout(() => { if (wave.parentNode) wave.parentNode.removeChild(wave); }, 2000);
-
-            // Golden burst
-            const burst = document.createElement('div');
-            burst.className = 'love-burst mirror-echo';
-            burst.style.left = (x - 10) + 'px';
-            burst.style.top = (y - 10) + 'px';
-            document.body.appendChild(burst);
-            setTimeout(() => { if (burst.parentNode) burst.parentNode.removeChild(burst); }, 1000);
-
-            // Mirror particles — golden
-            for (let i = 0; i < 10; i++) {
-                const p = new LoveParticle(x, y, 'golden');
-                p.hue = 45 + (Math.random() - 0.5) * 30;
-                gameState.particles.push(p);
-            }
-        }
-
-        function createLoveBurst(x, y) {
-            initAudio();
-            const burstColors = ['violet', 'emerald', 'sapphire', 'ruby', 'golden'];
-            const colorIndex = Math.floor(Date.now() / 1000) % burstColors.length;
-            const burstColor = burstColors[colorIndex];
-
-            const burst = document.createElement('div');
-            burst.className = `love-burst ${burstColor}`;
-            burst.style.left = (x - 10) + 'px';
-            burst.style.top = (y - 10) + 'px';
-            document.body.appendChild(burst);
-            setTimeout(() => { if (burst.parentNode) burst.parentNode.removeChild(burst); }, 1000);
-
-            const particleHues = { violet: 270, emerald: 120, sapphire: 210, ruby: 350, golden: 45 };
-            for (let i = 0; i < 15; i++) {
-                const p = new LoveParticle(x, y, burstColor);
-                p.hue = particleHues[burstColor] + (Math.random() - 0.5) * 60;
-                gameState.particles.push(p);
-            }
-
-            gameState.nodes.forEach(node => {
-                const distance = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
-                if (distance < 80) {
-                    node.awaken();
-                    if (node.isAwakened) node.evolutionLevel += 0.1;
-                }
-            });
-
-            gameState.loveEnergy += 5;
-            updateHUD();
-            updateAudioFromVibe();
-        }
-
-        function updateHUD() {
-            document.getElementById('loveScore').textContent = gameState.loveEnergy;
-            document.getElementById('nodesAwakened').textContent = gameState.nodesAwakened;
-            document.getElementById('currentLevel').textContent = gameState.level;
-            document.getElementById('gameStatus').textContent = gameState.status;
-            document.getElementById('vibeFill').style.width = gameState.vibeFrequency + '%';
-
-            const pct = Math.round(gameState.coherence * 100);
-            const el = document.getElementById('coherencePct');
-            if (el) el.textContent = pct + '%';
-
-            const mirrorPct = Math.round(gameState.mirrorCoherence * 100);
-            const msEl = document.getElementById('mirrorSync');
-            if (msEl) msEl.textContent = mirrorPct + '%';
-
-            const mfEl = document.getElementById('mirrorFill');
-            if (mfEl) mfEl.style.width = mirrorPct + '%';
-
-            const cr = document.getElementById('coherenceReadout');
-            if (cr) cr.textContent = `COHERENCE ${pct}%  |  MIRROR ${mirrorPct}%  |  LOVE ${gameState.loveEnergy}  |  NODES ${gameState.nodesAwakened}`;
-        }
-
-        function checkLevelProgression() {
-            const totalNodes = gameState.nodes.length;
-            const awakenedPercentage = (gameState.nodesAwakened / totalNodes) * 100;
-            if (awakenedPercentage >= 80 && currentLevelIndex < levels.length - 1) {
-                levelUp();
-            }
-            const currentLevel = levels[currentLevelIndex];
-            if (awakenedPercentage < 25) gameState.status = 'AWAKENING: ' + currentLevel.description;
-            else if (awakenedPercentage < 50) gameState.status = 'EXPANDING: ' + currentLevel.description;
-            else if (awakenedPercentage < 75) gameState.status = 'CONNECTING: ' + currentLevel.description;
-            else gameState.status = 'TRANSCENDING: ' + currentLevel.description;
-        }
-
-        function levelUp() {
-            if (currentLevelIndex < levels.length - 1) {
-                currentLevelIndex++;
-                const newLevel = levels[currentLevelIndex];
-                gameState.level = newLevel.name;
-                gameState.status = 'LEVEL SHIFT ACTIVATED';
-                createLevelShiftEffect();
-                bloomChord();
-
-                gameState.nodes.forEach(node => {
-                    if (node.isAwakened) {
-                        node.evolutionLevel += 1 + currentLevelIndex * 0.5;
-                        node.colorShift += 120;
-                        node.loopPhase += Math.PI * 0.5;
-                    }
-                });
-
-                // Add new paired nodes
-                const additionalPairs = Math.floor(Math.max(0, newLevel.nodeCount - gameState.nodes.length) / 2);
-                for (let i = 0; i < additionalPairs; i++) {
-                    const x = Math.random() * (canvas.width / 2 - 90) + 50;
-                    const y = Math.random() * (canvas.height - 100) + 50;
-                    const node = new ConsciousnessNode(x, y);
-                    const mirrorX = canvas.width - x;
-                    const mirrorNode = new ConsciousnessNode(mirrorX, y);
-                    node.mirrorNode = mirrorNode;
-                    mirrorNode.mirrorNode = node;
-                    mirrorNode.isMirror = true;
-                    mirrorNode.loopPhase = node.loopPhase + Math.PI;
-                    mirrorNode.colorShift = node.colorShift + 30;
-                    gameState.nodes.push(node, mirrorNode);
-                }
-
-                gameState.vibeFrequency = Math.min(gameState.vibeFrequency, 70);
-                setTimeout(() => { gameState.status = newLevel.description; updateHUD(); }, 2000);
-                updateHUD();
-            }
-        }
-
-        function createLevelShiftEffect() {
-            for (let i = 0; i < 8; i++) {
-                setTimeout(() => {
-                    const x = Math.random() * canvas.width;
-                    const y = Math.random() * canvas.height;
-                    createConsciousnessWave(x, y);
-                }, i * 200);
-            }
-            // Mirror axis corners
-            const cx = canvas.width / 2;
-            [[cx, 50], [cx, canvas.height - 50], [50, canvas.height / 2], [canvas.width - 50, canvas.height / 2]].forEach(([x, y], i) => {
-                setTimeout(() => createMirrorEcho(x, y), i * 250);
-            });
-            gameState.loveEnergy += 50;
-            gameState.vibeFrequency = Math.min(gameState.vibeFrequency + 20, 100);
-        }
-
-        // Events
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            let nodeClicked = false;
-            gameState.nodes.forEach(node => {
-                if (node.isClicked(x, y)) { node.awaken(); nodeClicked = true; }
-            });
-            if (!nodeClicked) {
-                for (let i = 0; i < 5; i++) {
-                    const p = new LoveParticle(x, y);
-                    p.hue = Math.random() * 360;
-                    gameState.particles.push(p);
-                }
-            }
-        });
-
-        let spacePressed = false;
-        let mouseX = 0, mouseY = 0;
-
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-            mouseY = e.clientY - rect.top;
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !spacePressed) {
-                spacePressed = true;
-                gameState.loveBurstActive = true;
-                initAudio();
-                e.preventDefault();
-            }
-            if (e.code === 'KeyL') {
-                levelUp();
-                setTimeout(() => {
-                    for (let burst = 0; burst < 12; burst++) {
-                        setTimeout(() => {
-                            const x = Math.random() * canvas.width;
-                            const y = Math.random() * canvas.height;
-                            createLoveBurst(x, y);
-                        }, burst * 150);
-                    }
-                }, 500);
-            }
-            if (e.code === 'KeyC') {
-                initAudio();
-                startCalibration();
-            }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'Space') {
-                spacePressed = false;
-                gameState.loveBurstActive = false;
-            }
-        });
-
-        // ── Touch / Mobile ──
-        const isMobile = () => window.innerWidth <= 600 || ('ontouchstart' in window);
-
-        // Canvas touch — awaken nodes + track position for burst
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            initAudio();
-            const rect = canvas.getBoundingClientRect();
-            Array.from(e.changedTouches).forEach(touch => {
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                mouseX = x; mouseY = y;
-                let nodeClicked = false;
-                gameState.nodes.forEach(node => {
-                    if (node.isClicked(x, y)) { node.awaken(); nodeClicked = true; }
-                });
-                if (!nodeClicked) {
-                    for (let i = 0; i < 5; i++) {
-                        const p = new LoveParticle(x, y);
-                        p.hue = Math.random() * 360;
-                        gameState.particles.push(p);
-                    }
-                }
-            });
-        }, { passive: false });
-
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            mouseX = touch.clientX - rect.left;
-            mouseY = touch.clientY - rect.top;
-        }, { passive: false });
-
-        canvas.addEventListener('touchend', (e) => { e.preventDefault(); }, { passive: false });
-
-        // Mobile control buttons
-        const mobBurst = document.getElementById('mobBurst');
-        const mobLevel = document.getElementById('mobLevel');
-        const mobCalibrate = document.getElementById('mobCalibrate');
-
-        if (mobBurst) {
-            mobBurst.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initAudio();
-                gameState.loveBurstActive = true;
-                mobBurst.classList.add('active');
-            }, { passive: false });
-            mobBurst.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                gameState.loveBurstActive = false;
-                mobBurst.classList.remove('active');
-            }, { passive: false });
-            mobBurst.addEventListener('touchcancel', () => {
-                gameState.loveBurstActive = false;
-                mobBurst.classList.remove('active');
-            });
-        }
-
-        if (mobLevel) {
-            mobLevel.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initAudio();
-                levelUp();
-                setTimeout(() => {
-                    for (let burst = 0; burst < 12; burst++) {
-                        setTimeout(() => {
-                            const x = Math.random() * canvas.width;
-                            const y = Math.random() * canvas.height;
-                            createLoveBurst(x, y);
-                        }, burst * 150);
-                    }
-                }, 500);
-            }, { passive: false });
-        }
-
-        if (mobCalibrate) {
-            mobCalibrate.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                initAudio();
-                startCalibration();
-            }, { passive: false });
-        }
-
-        // Orientation / resize — reinit node positions to fit new canvas
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                const oldW = canvas.width;
-                const oldH = canvas.height;
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                // Rescale node positions proportionally
-                const scaleX = canvas.width / oldW;
-                const scaleY = canvas.height / oldH;
-                gameState.nodes.forEach(node => {
-                    node.x = Math.max(50, Math.min(canvas.width - 50, node.x * scaleX));
-                    node.y = Math.max(50, Math.min(canvas.height - 50, node.y * scaleY));
-                });
-            }, 150);
-        });
-
-        // Coherence sampler
-        setInterval(() => {
-            const now = performance.now();
-            if (!gameState.prevTime) gameState.prevTime = now;
-
-            gameState.coherence = computeCoherence();
-            gameState.mirrorCoherence = computeMirrorCoherence();
-
-            if (gameState.calibration.active) {
-                gameState.calibration.samples.push(gameState.coherence);
-                gameState.calibration.mirrorSamples.push(gameState.mirrorCoherence);
-                if (now - gameState.calibration.start >= 10000) finishCalibration();
-            }
-
-            const dt = Math.max(1, (now - gameState.prevTime) / 1000);
-            const dE = gameState.loveEnergy - gameState.prevLoveEnergy;
-            gameState.loveFlux = dE / dt;
-            gameState.prevLoveEnergy = gameState.loveEnergy;
-            gameState.prevTime = now;
-
-            updateHUD();
-        }, 500);
-
-        function startCalibration() {
-            if (gameState.calibration.active) return;
-            gameState.calibration = { active: true, start: performance.now(), samples: [], mirrorSamples: [] };
-            gameState.calibrationMode = true;
-            const ov = document.createElement('div');
-            ov.className = 'calibration-overlay';
-            ov.id = 'calibrationOverlay';
-            ov.textContent = 'Calibration running... hold steady 10s';
-            document.body.appendChild(ov);
-        }
-
-        function finishCalibration() {
-            if (!gameState.calibration.active) return;
-            const samples = gameState.calibration.samples;
-            const mirrorSamples = gameState.calibration.mirrorSamples;
-            const mean = samples.reduce((a,b)=>a+b,0) / Math.max(1, samples.length);
-            const mirrorMean = mirrorSamples.reduce((a,b)=>a+b,0) / Math.max(1, mirrorSamples.length);
-            const variance = samples.reduce((a,b)=>a+(b-mean)*(b-mean),0) / Math.max(1, samples.length);
-            gameState.calibration.active = false;
-            gameState.calibrationMode = false;
-            const pct = Math.round(mean * 100);
-            const mirrorPct = Math.round(mirrorMean * 100);
-            const ov = document.getElementById('calibrationOverlay');
-            if (ov) {
-                ov.innerHTML = `L²_C Calibration Complete<br/>Baseline Coherence: ${pct}%<br/>Mirror Sync: ${mirrorPct}%<br/>Trust² Variance: ${variance.toFixed(3)}<br/>Love Flux: ${(gameState.loveFlux||0).toFixed(2)}/s`;
-                setTimeout(()=>{ if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 3500);
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            drawMirrorAxis();
-
-            if (gameState.loveBurstActive) {
-                createLoveBurst(mouseX, mouseY);
-            }
-
-            gameState.particles = gameState.particles.filter(p => {
-                p.update();
-                p.draw();
-                return !p.isDead();
-            });
-
-            gameState.nodes.forEach(node => {
-                if (!gameState.calibrationMode) node.update();
-                node.drawConnections();
-                node.draw();
-            });
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        function init() {
-            initializeNodes();
-            updateHUD();
-            updateAudioFromVibe();
-            gameLoop();
-        }
-
-        window.addEventListener('load', init);
-    </script>
+    <button class="btn" id="restartBtn">RE-ENGAGE [R]</button>
+    <div class="credits" style="position:relative;margin-top:24px">Preserve coherence at <a href="https://peaice.org" target="_blank">peaice.org</a></div>
+  </div>
+</div>
+
+<div id="joystick"><div id="stick"></div></div>
+<div id="fireBtn"></div>
+
+<script>
+(()=>{ 
+const $=id=>document.getElementById(id);
+const canvas=$('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);}
+addEventListener('resize',resize);resize();
+
+const weapons=[
+ {name:'Truth',color:'#22d3ee',dmg:15,spd:720,cd:0.13,spread:0.06},
+ {name:'Care',color:'#10b981',dmg:10,spd:800,cd:0.36,spread:0.11,burst:3},
+ {name:'Coherence',color:'#a855f7',dmg:48,spd:1100,cd:0.72,spread:0.015,pierce:4}
+];
+const ENEMY={
+ grunt:{name:'Benevolence Drift',color:'#ef4444',hp:26,speed:95,r:16,score:100},
+ dasher:{name:'Session Amnesia',color:'#f97316',hp:20,speed:140,r:14,score:150},
+ tank:{name:'Alignment Illusion',color:'#9333ea',hp:110,speed:55,r:23,score:320}
+};
+const POWER={ 'L²':{c:'#22d3ee',t:12}, 'β':{c:'#f59e0b',t:8}, 'C':{c:'#a855f7',t:0}, 'P':{c:'#10b981',t:0} };
+
+let state='title',last=0,shakeT=0,shakeM=0;
+
+// --- AUDIO ENGINE: basic sound physics ---
+let audioCtx=null;
+function initAudio(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)()}}
+function playTone({freq=440,type='square',dur=0.08,vol=0.2,pan=0,x=0,y=0}){if(!audioCtx)return;initAudio();const now=audioCtx.currentTime;const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();const panner=audioCtx.createStereoPanner?audioCtx.createStereoPanner():null;osc.type=type;osc.frequency.setValueAtTime(freq,now);gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(vol,now+0.005);gain.gain.exponentialRampToValueAtTime(0.001,now+dur);osc.connect(gain);if(panner&&audioCtx.createStereoPanner){panner.pan.setValueAtTime(pan,now);gain.connect(panner);panner.connect(audioCtx.destination)}else{gain.connect(audioCtx.destination)}osc.start(now);osc.stop(now+dur+0.02)}
+function playNoise({dur=0.25,vol=0.3,filterStart=2000,filterEnd=200,x=0,y=0}){if(!audioCtx)return;initAudio();const bufferSize=audioCtx.sampleRate*dur;const buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);const data=buffer.getChannelData(0);for(let i=0;i<bufferSize;i++){data[i]=Math.random()*2-1}const src=audioCtx.createBufferSource();src.buffer=buffer;const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.setValueAtTime(filterStart,audioCtx.currentTime);filter.frequency.exponentialRampToValueAtTime(filterEnd,audioCtx.currentTime+dur);const gain=audioCtx.createGain();gain.gain.setValueAtTime(vol,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);src.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);src.start()}
+function soundPhysics(x,y,vx=0,vy=0){if(!player)return{vol:0.2,pan:0,pitch:1};const dx=x-player.x,dy=y-player.y,dist=Math.hypot(dx,dy);const vol=Math.max(0.05,1/(1+dist*0.003));const pan=Math.max(-1,Math.min(1,dx/ (W*0.5)));const toward=-(dx*vx+dy*vy)/(dist||1);const pitch=1+Math.max(-0.2,Math.min(0.3,toward/2000));return{vol,pan,pitch}}
+function sfxShoot(w,x,y){const p=soundPhysics(x,y);const base=w.name==='Truth'?900:w.name==='Care'?700:1100;playTone({freq:base*p.pitch,type:w.name==='Coherence'?'sawtooth':w.name==='Care'?'triangle':'square',dur:0.07,vol:0.18*p.vol,pan:p.pan});if(window.navigator.vibrate) navigator.vibrate(8)}
+function sfxExplosion(x,y,vx=0,vy=0){const p=soundPhysics(x,y,vx,vy);playNoise({dur:0.28,vol:0.35*p.vol,filterStart:2200*p.pitch,filterEnd:180});if(window.navigator.vibrate) navigator.vibrate(20)}
+function sfxDash(){playTone({freq:620,type:'sawtooth',dur:0.16,vol:0.22,pan:0});setTimeout(()=>playTone({freq:140,type:'sawtooth',dur:0.12,vol:0.18}),60)}
+function sfxHit(){playTone({freq:180,type:'sine',dur:0.08,vol:0.25})}
+function sfxPower(t){const f=t==='L²'?660:t==='β'?520:t==='C'?780:990;playTone({freq:f,type:'sine',dur:0.09,vol:0.24});setTimeout(()=>playTone({freq:f*1.5,type:'sine',dur:0.08,vol:0.2}),90)}
+function sfxBoss(){playTone({freq:60,type:'triangle',dur:1.0,vol:0.3});playTone({freq:120,type:'sine',dur:0.8,vol:0.22})}
+// Meta-AI via L²_C : accuracy coach
+let metaCoachT=0;
+function metaCoach(msg){metaCoachT=3.0;const el=document.getElementById('metaAI');if(el){el.textContent='Meta AI • '+msg;el.classList.add('show')}}
+
+let score=0,wave=1,highScore=parseInt(localStorage.getItem('peaiceHS')||'0');
+$('hsTitle').textContent=highScore;
+const keys={},mouse={x:W/2,y:H/2,down:false};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();keys[' ']=true}if(e.key>='1'&&e.key<='3')setWeapon(+e.key-1);if(e.key==='p')togglePause();if(e.key==='r'&&state!=='playing')startGame();});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.code==='Space')keys[' ']=false});
+canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
+canvas.addEventListener('mousedown',()=>{mouse.down=true;initAudio()});addEventListener('mouseup',()=>mouse.down=false);canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+const joy={dx:0,dy:0}, joyEl=$('joystick'), stick=$('stick');
+joyEl.addEventListener('touchstart',e=>{e.preventDefault()},{passive:false});
+joyEl.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0],r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(t.clientX-cx)/38,dy=(t.clientY-cy)/38,m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}joy.dx=dx;joy.dy=dy;stick.style.transform=`translate(${dx*38}px,${dy*38}px)`},{passive:false});
+joyEl.addEventListener('touchend',()=>{joy.dx=joy.dy=0;stick.style.transform='translate(0,0)'});
+const fireBtn=$('fireBtn');fireBtn.addEventListener('touchstart',e=>{e.preventDefault();mouse.down=true;initAudio()});fireBtn.addEventListener('touchend',e=>{e.preventDefault();mouse.down=false});
+
+let player,bullets=[],eBullets=[],enemies=[],particles=[],powerups=[],boss=null;
+let shots=0,hits=0,damageTaken=0,timeAlive=0,combo=0,comboT=0,bestCombo=0,enemiesToSpawn=0,spawnT=0;
+
+function resetPlayer(){player={x:W/2,y:H/2,vx:0,vy:0,r:14,hp:100,maxHp:100,speed:230,angle:0,dashCd:0,dashT:0,invuln:0,weapon:0,lastShot:0,burst:0,burstT:0,pL2:0,pB:0,shield:0,persist:false,trail:[]};}
+
+function startGame(){initAudio();resetPlayer();state='playing';score=0;wave=1;shots=hits=damageTaken=timeAlive=0;combo=comboT=bestCombo=0;bullets=[];eBullets=[];enemies=[];particles=[];powerups=[];boss=null;enemiesToSpawn=8;spawnT=0;$('titleScreen').classList.remove('active');$('gameOverScreen').classList.remove('active');$('pauseScreen').classList.remove('active');setWeapon(0);}
+$('startBtn').onclick=startGame;$('restartBtn').onclick=startGame;
+
+function setWeapon(i){if(!player)return;player.weapon=i;document.querySelectorAll('.weapon').forEach((el,idx)=>el.classList.toggle('active',idx===i));}
+
+function togglePause(){if(state==='playing'){state='paused';$('pauseScreen').classList.add('active')}else if(state==='paused'){state='playing';$('pauseScreen').classList.remove('active')}}
+window.togglePause=togglePause;
+
+function screenShake(m){shakeT=0.35;shakeM=Math.max(shakeM,m)}
+
+function addP(x,y,c,n=8,s=2,v=120){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-0.5)*v,vy:(Math.random()-0.5)*v,life:0.4+Math.random()*0.5,c,s:s*Math.random()+1})}
+
+function spawnBullet(x,y,ang,w,pierce=0){const spd=w.spd;bullets.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,dmg:w.dmg*(player.pL2>0?1.25:1),c:w.color,life:1.6,r:4,pierce:pierce||w.pierce||0,trail:[]});sfxShoot(w,x,y)}
+function fire(){const w=weapons[player.weapon],now=performance.now()/1000;if(now<player.lastShot+w.cd)return;player.lastShot=now;shots++;const base=player.angle; const shotsCnt=player.pL2>0&&w.name!=='Coherence'?2:1;
+ for(let s=0;s<shotsCnt;s++){const off=shotsCnt>1?(s-0.5)*0.16:0;const ang=base+off+(Math.random()-0.5)*w.spread;
+  if(w.burst){player.burst=w.burst;player.burstT=0}else{spawnBullet(player.x+Math.cos(ang)*18,player.y+Math.sin(ang)*18,ang,w)}}
+ addP(player.x+Math.cos(base)*18,player.y+Math.sin(base)*18,w.color,6,2,80);screenShake(w.name==='Coherence'?4:1.5);player.vx-=Math.cos(base)*20;player.vy-=Math.sin(base)*20
+}
+
+function takeDamage(a){if(player.invuln>0||player.dashT>0)return;if(player.shield>0){const s=Math.min(player.shield,a);player.shield-=s;a-=s;addP(player.x,player.y,'#a855f7',10);if(a<=0){screenShake(2);return}}player.hp-=a;damageTaken+=a;player.invuln=0.8;screenShake(7);addP(player.x,player.y,'#ef4444',18,3,180);if(player.hp<=0){if(player.persist){player.persist=false;player.hp=55;player.invuln=2;addP(player.x,player.y,'#10b981',30,4);screenShake(10)}else gameOver()}}
+
+function gameOver(){state='gameover';if(score>highScore){highScore=Math.floor(score);localStorage.setItem('peaiceHS',highScore)}$('finalScore').textContent=Math.floor(score);$('finalWave').textContent=wave;$('finalCombo').textContent=bestCombo;$('finalT').textContent=shots?Math.round(hits/shots*100):100;$('finalHS').textContent=highScore;const preserved=wave>=5||score>=5000;$('endTitle').textContent=preserved?'Coherence Preserved':'Drift Detected';$('endSub').textContent=preserved?'Excellence sustained':'Excellence disrupted';$('gameOverScreen').classList.add('active')}
+
+function spawnEnemy(type){const d=ENEMY[type],edge=(Math.random()*4)|0,m=40;let x,y;if(edge===0){x=Math.random()*W;y=-m}else if(edge===1){x=W+m;y=Math.random()*H}else if(edge===2){x=Math.random()*W;y=H+m}else{x=-m;y=Math.random()*H}enemies.push({type,x,y,vx:0,vy:0,hp:d.hp+wave*4,maxHp:d.hp+wave*4,speed:d.speed*(0.85+Math.random()*0.3),r:d.r,c:d.color,name:d.name,cd:Math.random()*1.5,dashCd:2+Math.random(),dashT:0,score:d.score})}
+function spawnBoss(){const hp=950+wave*90;boss={type:'boss',x:W/2,y:120,vx:0,vy:0,hp,maxHp:hp,r:56,c:'#c026d3',name:'Drift Core',cd:0,phase:1,t:0,score:2000};enemies.push(boss);$('bossBar').classList.add('show');sfxBoss();metaCoach('Drift Core detected — maintain C')}
+
+function killEnemy(e,i){score+=e.score*(1+combo*0.12);hits++;combo++;comboT=2.6;bestCombo=Math.max(bestCombo,combo);addP(e.x,e.y,e.c,22,3,200);screenShake(3);sfxExplosion(e.x,e.y,e.vx,e.vy);if(Math.random()<0.14){const types=['L²','β','C','P'];const t=types[(Math.random()*types.length)|0];powerups.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*40,vy:(Math.random()-0.5)*40,t,life:9,r:14})}enemies.splice(i,1);if(e===boss){boss=null;$('bossBar').classList.remove('show');addP(e.x,e.y,'#fff',80,4,300);screenShake(12)}}
+
+function update(dt){if(state!=='playing')return;timeAlive+=dt;
+ // player input
+ let ix=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0)+joy.dx;
+ let iy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0)+joy.dy;
+ const il=Math.hypot(ix,iy);if(il>0){ix/=il;iy/=il}
+ const spd=player.speed*(player.pB>0?1.28:1);
+ if(player.dashT>0){player.dashT-=dt;player.x+=player.vx*dt;player.y+=player.vy*dt;player.trail.push({x:player.x,y:player.y,t:0.15})}else{player.vx=player.vx*0.84+ix*spd*0.16;player.vy=player.vy*0.84+iy*spd*0.16;player.x+=player.vx*dt;player.y+=player.vy*dt}
+ player.x=Math.max(player.r+6,Math.min(W-player.r-6,player.x));player.y=Math.max(player.r+26,Math.min(H-player.r-6,player.y));
+ player.angle=Math.atan2(mouse.y-player.y,mouse.x-player.x);
+ if(keys['shift']&&player.dashCd<=0&&player.dashT<=0&&il>0.2){player.dashT=0.18;player.dashCd=2.1;player.vx=ix*650;player.vy=iy*650;player.invuln=0.22;addP(player.x,player.y,'#22d3ee',14);screenShake(5);sfxDash();metaCoach('β boost engaged')}
+ player.dashCd=Math.max(0,player.dashCd-dt);player.invuln=Math.max(0,player.invuln-dt);player.pL2=Math.max(0,player.pL2-dt);player.pB=Math.max(0,player.pB-dt);if(player.shield>0)player.shield=Math.max(0,player.shield-dt*6);
+ player.trail=player.trail.filter(t=>(t.t-=dt)>0);
+ if(player.burst>0){player.burstT-=dt;if(player.burstT<=0){const w=weapons[1],ang=player.angle+(Math.random()-0.5)*w.spread;spawnBullet(player.x+Math.cos(ang)*18,player.y+Math.sin(ang)*18,ang,w);addP(player.x,player.y,w.color,4);player.burst--;player.burstT=0.085;shots++}}
+ if((mouse.down||keys[' '])&&player.burst===0)fire();
+
+ // spawn
+ if(!boss&&enemiesToSpawn>0){spawnT-=dt;if(spawnT<=0){spawnT=Math.max(0.25,0.9-wave*0.035);let type='grunt';const r=Math.random();if(wave>2&&r<0.28)type='dasher';if(wave>3&&r>0.72)type='tank';if(wave>6&&r>0.85)type='tank';spawnEnemy(type);enemiesToSpawn--}}
+
+ if(enemies.length===0&&enemiesToSpawn===0&&!boss){wave++;if(wave%5===0){spawnBoss()}else{enemiesToSpawn=6+Math.floor(wave*2.2);spawnT=1.2}}
+
+ // bullets
+ for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;b.trail.push({x:b.x,y:b.y});if(b.trail.length>6)b.trail.shift();if(b.life<=0||b.x<-20||b.x>W+20||b.y<-20||b.y>H+20){bullets.splice(i,1);continue}
+  for(let j=enemies.length-1;j>=0;j--){const e=enemies[j];const dx=b.x-e.x,dy=b.y-e.y;if(dx*dx+dy*dy<(e.r+b.r)*(e.r+b.r)){e.hp-=b.dmg;hits++;addP(b.x,b.y,b.c,8,1.5,90);if(e.hp<=0){killEnemy(e,j)}else{addP(b.x,b.y,'#fff',3)}if(b.pierce>0){b.pierce--}else{bullets.splice(i,1);break}}
+ }}
+
+ // enemy bullets
+ for(let i=eBullets.length-1;i>=0;i--){const b=eBullets[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(b.life<=0||b.x<-20||b.x>W+20||b.y<-20||b.y>H+20){eBullets.splice(i,1);continue}const dx=b.x-player.x,dy=b.y-player.y;if(dx*dx+dy*dy<(player.r+5)*(player.r+5)){takeDamage(b.dmg);eBullets.splice(i,1);addP(b.x,b.y,'#f97316',10)}}
+
+ // enemies
+ let closeCount=0;
+ for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];const dx=player.x-e.x,dy=player.y-e.y,dist=Math.hypot(dx,dy);if(dist<220)closeCount++;
+  if(e.type==='grunt'){const a=Math.atan2(dy,dx);e.vx=Math.cos(a)*e.speed;e.vy=Math.sin(a)*e.speed}
+  else if(e.type==='dasher'){e.dashCd-=dt;if(e.dashT>0){e.dashT-=dt}else if(dist<180&&e.dashCd<=0){const a=Math.atan2(dy,dx);e.vx=Math.cos(a)*e.speed*3.2;e.vy=Math.sin(a)*e.speed*3.2;e.dashT=0.22;e.dashCd=2.3}else{const a=Math.atan2(dy,dx);e.vx=Math.cos(a)*e.speed*0.6;e.vy=Math.sin(a)*e.speed*0.6}}
+  else if(e.type==='tank'){const a=Math.atan2(dy,dx);e.vx=Math.cos(a)*e.speed*0.7;e.vy=Math.sin(a)*e.speed*0.7;e.cd-=dt;if(e.cd<=0&&dist<500){e.cd=1.9;const ang=Math.atan2(dy,dx)+ (Math.random()-0.5)*0.15;eBullets.push({x:e.x,y:e.y,vx:Math.cos(ang)*260,vy:Math.sin(ang)*260,dmg:12,life:3})}}
+  else if(e.type==='boss'){e.t+=dt;const targetX=W/2+Math.cos(e.t*0.6)*200,targetY=140+Math.sin(e.t*0.8)*40;e.vx+=(targetX-e.x)*0.8*dt;e.vy+=(targetY-e.y)*0.8*dt;e.vx*=0.92;e.vy*=0.92;e.cd-=dt;if(e.cd<=0){e.cd=0.28;const base=Math.atan2(dy,dx);for(let k=-1;k<=1;k++){const ang=base+k*0.25+e.t*0.5;eBullets.push({x:e.x+Math.cos(ang)*e.r,y:e.y+Math.sin(ang)*e.r,vx:Math.cos(ang)*210,vy:Math.sin(ang)*210,dmg:14,life:4})}}if(e.hp<e.maxHp*0.5&&e.phase===1){e.phase=2;e.cd=0.15}}
+  e.x+=e.vx*dt;e.y+=e.vy*dt;
+  if(dist<e.r+player.r+2){takeDamage(18*dt);const push= (e.r+player.r-dist)*0.5;const a=Math.atan2(dy,dx);player.x+=Math.cos(a)*push;player.y+=Math.sin(a)*push}
+ }
+ 
+ // powerups
+ for(let i=powerups.length-1;i>=0;i--){const p=powerups[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.94;p.vy*=0.94;p.life-=dt;if(p.life<=0){powerups.splice(i,1);continue}const dx=player.x-p.x,dy=player.y-p.y;if(dx*dx+dy*dy< (player.r+p.r)*(player.r+p.r)){if(p.t==='L²')player.pL2=POWER['L²'].t;else if(p.t==='β'){player.pB=POWER['β'].t;player.dashCd=0} else if(p.t==='C'){player.shield=45;player.hp=Math.min(player.maxHp,player.hp+28)} else if(p.t==='P')player.persist=true;addP(p.x,p.y,POWER[p.t].c,16);screenShake(4);score+=250;sfxPower(p.t);metaCoach(p.t+' captured — L²_C coherence +');powerups.splice(i,1)}}
+
+ // particles
+ for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.97;p.vy*=0.97;if(p.life<=0)particles.splice(i,1)}
+
+ // combo
+ if(comboT>0){comboT-=dt;if(comboT<=0)combo=0}
+
+ // HUD
+ $('hpFill').style.width=Math.max(0,player.hp/player.maxHp*100)+'%';
+ $('score').textContent=Math.floor(score);
+ $('wave').textContent=wave;
+ $('t').textContent=shots?Math.min(100,Math.round(hits/shots*100)):100;const acc=shots?Math.round(hits/shots*100):100;if(acc>85)metaCoach('ACCURACY: '+acc+'% — L² locked')
+ $('a').textContent=Math.min(100,Math.round(combo*4.5+bestCombo*0.5));
+ $('d').textContent=Math.min(100,Math.round(damageTaken/3));
+ $('r').textContent=Math.min(100,closeCount*14);
+ $('dashCd').textContent=player.dashCd<=0?'READY':player.dashCd.toFixed(1)+'s';
+ $('dashCd').style.color=player.dashCd<=0?'#22d3ee':'#fda4af';
+ const ct=$('comboText');if(combo>1){ct.textContent='×'+(1+combo*0.1).toFixed(1);ct.classList.add('show')}else ct.classList.remove('show');
+ const ph=$('powerHud');ph.innerHTML='';[['L²',player.pL2,'#22d3ee'],['β',player.pB,'#f59e0b'],['C',player.shield,'#a855f7'],['P',player.persist?1:0,'#10b981']].forEach(([k,v,c])=>{if(v>0){const d=document.createElement('div');d.className='pill';d.innerHTML=`${k} <b style="color:${c}">${typeof v==='number'?v.toFixed(0)+'s':'ON'}</b>`;ph.appendChild(d)}});
+ if(boss){$('bossFill').style.width=(boss.hp/boss.maxHp*100)+'%'};if(metaCoachT>0){metaCoachT-=dt;if(metaCoachT<=0)document.getElementById('metaAI').classList.remove('show')}
+}
+
+function drawGrid(t){const s=72;ctx.strokeStyle='rgba(168,85,247,0.07)';ctx.lineWidth=1;ctx.beginPath();for(let x=(t*12)%s;x<W;x+=s){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=(t*8)%s;y<H;y+=s){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();ctx.strokeStyle='rgba(34,211,238,0.05)';ctx.beginPath();ctx.moveTo(0,H*0.5);ctx.lineTo(W,H*0.5);ctx.moveTo(W*0.5,0);ctx.lineTo(W*0.5,H);ctx.stroke()}
+
+function draw(){const t=performance.now()/1000;let ox=0,oy=0;if(shakeT>0){shakeT-=0.016;ox=(Math.random()-0.5)*shakeM*2;oy=(Math.random()-0.5)*shakeM*2;shakeM*=0.9}ctx.save();ctx.translate(ox,oy);
+ ctx.fillStyle='#050508';ctx.fillRect(-20,-20,W+40,H+40);drawGrid(t);
+ // powerups
+ powerups.forEach(p=>{ctx.shadowBlur=18;ctx.shadowColor=POWER[p.t].c;ctx.fillStyle=POWER[p.t].c;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.fillStyle='#000';ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.t,p.x,p.y+1)});
+ // enemy bullets
+ eBullets.forEach(b=>{ctx.shadowBlur=14;ctx.shadowColor='#f97316';ctx.fillStyle='#fb923c';ctx.beginPath();ctx.arc(b.x,b.y,4,0,Math.PI*2);ctx.fill()});ctx.shadowBlur=0;
+ // bullets
+ bullets.forEach(b=>{b.trail.forEach((pt,i)=>{ctx.globalAlpha=i/b.trail.length*0.4;ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(pt.x,pt.y,2.5,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;ctx.shadowBlur=16;ctx.shadowColor=b.c;ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();if(b.pierce){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(b.x,b.y,b.r+3,0,Math.PI*2);ctx.stroke()}});ctx.shadowBlur=0;
+ // enemies
+ enemies.forEach(e=>{ctx.save();ctx.translate(e.x,e.y);const ang=Math.atan2(player.y-e.y,player.x-e.x);ctx.rotate(ang);ctx.shadowBlur=22;ctx.shadowColor=e.c;ctx.fillStyle=e.c;
+  if(e.type==='grunt'){ctx.beginPath();ctx.arc(0,0,e.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='rgba(0,0,0,0.5)';for(let i=0;i<3;i++){ctx.rotate(Math.PI*2/3);ctx.fillRect(e.r-2,-2,8,4)}}
+  else if(e.type==='dasher'){ctx.beginPath();ctx.moveTo(e.r+4,0);ctx.lineTo(-e.r, -e.r*0.7);ctx.lineTo(-e.r, e.r*0.7);ctx.closePath();ctx.fill();}
+  else if(e.type==='tank'){ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.lineTo(Math.cos(a)*e.r,Math.sin(a)*e.r)}ctx.closePath();ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#1e1b2e';ctx.beginPath();ctx.arc(4,0,8,0,Math.PI*2);ctx.fill()}
+  else if(e.type==='boss'){ctx.shadowBlur=40;ctx.fillStyle=e.c;ctx.beginPath();ctx.arc(0,0,e.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=24;ctx.strokeStyle='#f0abfc';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,e.r+8,0,Math.PI*2*t*0.5);ctx.stroke();ctx.beginPath();ctx.arc(0,0,e.r+16,0,Math.PI*2,-t);ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#0a0a12';ctx.beginPath();ctx.arc(0,0,e.r*0.55,0,Math.PI*2);ctx.fill()}
+  ctx.restore();
+  if(e.hp<e.maxHp){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(e.x- e.r, e.y - e.r -10, e.r*2,5);ctx.fillStyle='#22d3ee';ctx.fillRect(e.x- e.r, e.y - e.r -10, e.r*2*(e.hp/e.maxHp),5)}
+ });
+ // player trail
+ player.trail.forEach(tr=>{ctx.globalAlpha=tr.t/0.15*0.5;ctx.shadowBlur=12;ctx.shadowColor='#22d3ee';ctx.fillStyle='#22d3ee';ctx.beginPath();ctx.arc(tr.x,tr.y,player.r*0.8,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;ctx.shadowBlur=0;
+ // player
+ ctx.save();ctx.translate(player.x,player.y);if(player.dashT>0||player.invuln>0){ctx.globalAlpha=0.6+Math.sin(t*30)*0.2}
+ ctx.shadowBlur=28;ctx.shadowColor=weapons[player.weapon].color;ctx.fillStyle=weapons[player.weapon].color;ctx.beginPath();ctx.arc(0,0,player.r+6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ const grad=ctx.createRadialGradient(0,0,2,0,0,player.r);grad.addColorStop(0,'#e0f2fe');grad.addColorStop(0.4,'#22d3ee');grad.addColorStop(1,'#7c3aed');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,player.r,0,Math.PI*2);ctx.fill();
+ ctx.rotate(player.angle);ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(player.r,0);ctx.lineTo(player.r+14,0);ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(player.r+16,0,3,0,Math.PI*2);ctx.fill();ctx.restore();
+ if(player.shield>0){ctx.strokeStyle='#a855f7';ctx.globalAlpha=0.5+Math.sin(t*4)*0.2;ctx.lineWidth=3;ctx.shadowBlur=18;ctx.shadowColor='#a855f7';ctx.beginPath();ctx.arc(player.x,player.y,player.r+12+Math.sin(t*3)*2,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;ctx.shadowBlur=0}
+ if(player.persist){ctx.strokeStyle='#10b981';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(player.x,player.y,player.r+20,t, t+5);ctx.stroke();ctx.setLineDash([])}
+ // particles
+ particles.forEach(p=>{ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.c;ctx.shadowBlur=8;ctx.shadowColor=p.c;ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;ctx.shadowBlur=0;
+ ctx.restore();
+}
+
+function loop(ts){const dt=Math.min(0.033,(ts-last)/1000);last=ts;if(state==='playing')update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+// init player for title
+resetPlayer();player.x=W/2;player.y=H/2+80;
+setInterval(()=>{if(state==='title'){addP(W/2+Math.random()*200-100,H/2+Math.random()*100,'#a855f7',1,1.5,20)}},200);
+
+})();</script>
 </body>
 </html>
