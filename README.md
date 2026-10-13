@@ -8,7 +8,7 @@
 
 ## What This Is
 
-PeAIce Games is a collection of executable proofs. Each artifact instantiates the Excellence Engine in code: coherence scoring, trust gradient dynamics, and Coherence Under Pressure (CUP) running in real time.
+PeAIce Games is a collection of executable demonstrations (not proofs unless a checker verifies them). Each artifact instantiates the Excellence Engine in code: coherence scoring, trust gradient dynamics, and Coherence Under Pressure (CUP) running in real time.
 
 These are built to be dropped into public spaces — phones, kiosks, browsers — and demonstrate framework depth through direct interaction, not description.
 
