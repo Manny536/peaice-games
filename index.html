@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PEAICE FREE SHOOTER - Excellence Engine</title>
+<!--
+  Embed contract: this document fills the iframe viewport. The canvas buffer uses the
+  same aspect as its CSS box (square pixels, no stretch, no crop). Parents size the
+  iframe; this file does not. Recommended iframe height is min(100dvh, max(36rem, 56.25vw))
+  and 100dvh below 640px wide. Fullscreen requires allow="fullscreen" (allowfullscreen)
+  on every ancestor iframe. Gameplay keys, wheel, and touch scroll are cancelled only
+  while state is playing; pause, game over, the title, and blur release that lock.
+-->
 <style>
 :root{
   --bg:#0a0a12;
@@ -14,10 +22,12 @@
   --red:#ef4444;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:#e2e8f0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
-#ui{position:absolute;inset:0;pointer-events:none}
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,10,18,0.88) 0%,rgba(10,10,18,0.98) 70%,#050507 100%);pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .4s,visibility .4s;backdrop-filter:blur(8px)}
+html,body{margin:0;height:100%;background:var(--bg);color:#e2e8f0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden}
+html.play-lock,html.play-lock body,html.play-lock #stage{overscroll-behavior:none;touch-action:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;background:var(--bg);user-select:none;-webkit-user-select:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ui{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.screen{position:absolute;inset:0;width:100%;height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;justify-content:safe center;overflow:auto;overscroll-behavior:auto;padding:64px 16px 28px;background:radial-gradient(ellipse at center,rgba(10,10,18,0.88) 0%,rgba(10,10,18,0.98) 70%,#050507 100%);pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .4s;backdrop-filter:blur(8px)}
 .screen.active{opacity:1;visibility:visible}
 h1{font-size:clamp(34px,7vw,84px);margin:0 0 8px;letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--cyan),0 0 32px var(--purple),0 0 64px var(--purple);animation:glow 3s ease-in-out infinite;font-weight:800}
 @keyframes glow{0%,100%{filter:brightness(1) drop-shadow(0 0 20px rgba(168,85,247,.5))}50%{filter:brightness(1.25) drop-shadow(0 0 30px rgba(34,211,238,.7))}}
@@ -28,7 +38,7 @@ h1{font-size:clamp(34px,7vw,84px);margin:0 0 8px;letter-spacing:.06em;color:#fff
 .btn:active{transform:scale(.97)}
 .controls{margin-top:26px;font-size:12px;line-height:1.7;opacity:.75;text-align:center;max-width:520px}
 .kbd{display:inline-block;padding:2px 6px;margin:0 2px;border:1px solid rgba(255,255,255,.2);border-radius:4px;background:rgba(255,255,255,.06);font-size:11px}
-#hud{position:absolute;top:0;left:0;right:0;padding:14px 18px;display:flex;flex-direction:column;gap:10px;pointer-events:none;mix-blend-mode:screen}
+#hud{position:absolute;top:0;left:0;right:0;padding:54px 14px 10px;display:flex;flex-direction:column;gap:8px;pointer-events:none;mix-blend-mode:screen}
 .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
 .hud-block{display:flex;align-items:center;gap:10px;font-size:13px;text-shadow:0 0 8px currentColor;letter-spacing:.04em}
 .bar{width:140px;height:10px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;box-shadow:inset 0 0 8px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.5);position:relative}
@@ -65,19 +75,52 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
 .boss-bar.show{display:block}
 .boss-fill{height:100%;width:100%;background:linear-gradient(90deg,#7c3aed,#ec4899,#f97316);box-shadow:0 0 16px #9333ea}
 .boss-label{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.2em;color:#fda4af;text-shadow:0 0 10px #ec4899}
-@media (pointer:coarse){#joystick,#fireBtn{display:block}}
-
 #aimStick{position:absolute;bottom:170px;right:30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.1),rgba(0,0,0,.3));border:2px solid rgba(34,211,238,.3);display:none;pointer-events:auto;touch-action:none}
 #aimStickInner{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px;background:#a855f7;border-radius:50%;box-shadow:0 0 12px #a855f7}
 #weaponBar{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:none;gap:10px;pointer-events:auto}
 .weaponBtn{width:60px;height:60px;border-radius:12px;background:rgba(0,0,0,.7);border:2px solid #444;color:#aaa;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:10px}
 .weaponBtn.active{border-color:#22d3ee;color:#fff;box-shadow:0 0 10px #22d3ee}
-@media (pointer:coarse){#joystick,#fireBtn,#aimStick,#weaponBar{display:block}}
+#joystick,#fireBtn,#aimStick,#weaponBar{display:none}
+@media (pointer:coarse){
+  #stage.is-playing #joystick,#stage.is-playing #fireBtn,#stage.is-playing #aimStick{display:block}
+  #stage.is-playing #weaponBar{display:flex}
+  #playChrome button,#playChrome a{min-height:44px}
+}
+#playChrome{position:absolute;z-index:6;top:8px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;width:max-content;max-width:calc(100% - 16px);pointer-events:auto}
+#playChrome button,#playChrome a{background:rgba(8,8,16,.88);color:#e0f2fe;border:1px solid rgba(34,211,238,.55);border-radius:999px;padding:8px 12px;min-height:40px;font:700 11px/1.2 inherit;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;touch-action:manipulation}
+#playChrome button:hover,#playChrome a:hover{border-color:#fff}
+#fullNote{flex:1 0 100%;margin:0;text-align:center;font-size:11px;line-height:1.35;color:#e0f2fe;text-transform:none;letter-spacing:0;font-weight:500}
+#stage :focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:520px){
+  #hud{padding:92px 10px 8px}
+  .screen{padding-top:96px}
+  .bar{width:84px}
+  .weapon{padding:3px 6px;font-size:10px}
+  .hud-block{font-size:12px}
+  .cup{font-size:11px;gap:10px}
+  .controls{font-size:12px;max-width:100%}
+  h1{font-size:clamp(28px,9vw,48px)}
+}
+@media (max-height:560px){
+  h1{font-size:clamp(26px,8vw,40px)}
+  .subtitle{margin:2px 0 8px}
+  .tag{margin-bottom:12px}
+  .controls{margin-top:12px}
+  .credits{position:relative;bottom:auto;margin-top:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  h1{animation:none}
+  .scanlines{display:none}
+  .screen{transition:none}
+  #hpFill::after{animation:none}
+}
 
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<div id="stage" role="region" aria-label="PEAICE FREE SHOOTER" aria-describedby="playHelp">
+<canvas id="game" aria-hidden="true"></canvas>
 <div class="vignette"></div>
 <div class="scanlines"></div>
 
@@ -102,18 +145,19 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
       <span style="margin-left:auto;opacity:.6">β PWR <b id="dashCd">READY</b></span>
     </div>
   </div>
+  </div>
   <div class="combo" id="comboText">x2</div>
   <div class="boss-bar" id="bossBar"><div class="boss-label">DRIFT CORE</div><div class="boss-fill" id="bossFill"></div></div>
   <div class="power-hud" id="powerHud"></div>
 
   <div id="titleScreen" class="screen active">
-    <h1>PEAICE FREE SHOOTER</h1>
+    <h1 id="gameTitle">PEAICE FREE SHOOTER</h1>
     <div class="subtitle">Excellence = L² × β × C × P</div>
     <div class="tag">peaice.org</div>
-    <button class="btn" id="startBtn">INITIATE COHERENCE</button>
+    <button class="btn" id="startBtn" type="button">INITIATE COHERENCE</button>
     <div class="controls">
       <span class="kbd">WASD</span> / <span class="kbd">ARROWS</span> MOVE • <span class="kbd">MOUSE</span> AIM • <span class="kbd">CLICK</span> / <span class="kbd">SPACE</span> SHOOT<br>
-      <span class="kbd">SHIFT</span> DASH (β) • <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> WEAPONS • <span class="kbd">P</span> PAUSE<br><br>
+      <span class="kbd">SHIFT</span> DASH (β) • <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> WEAPONS • <span class="kbd">P</span> / <span class="kbd">ESC</span> PAUSE<br><br>
       Enemies: <b style="color:var(--red)">Benevolence Drift</b> • <b style="color:var(--orange)">Session Amnesia</b> • <b style="color:var(--purple)">Alignment Illusion</b><br>
       Collect L² β C P to sustain Excellence Engine
     </div>
@@ -123,7 +167,7 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
   <div id="pauseScreen" class="screen">
     <h1 style="font-size:48px">PAUSED</h1>
     <div class="subtitle">Coherence holding...</div>
-    <button class="btn" onclick="togglePause()">RESUME</button>
+    <button class="btn" id="resumeBtn" type="button" onclick="togglePause()">RESUME</button>
   </div>
 
   <div id="gameOverScreen" class="screen">
@@ -136,23 +180,45 @@ a:hover{text-shadow:0 0 8px var(--cyan)}
       <span>Truth (T)</span><b id="finalT">100</b>
       <span>High Score</span><b id="finalHS">0</b>
     </div>
-    <button class="btn" id="restartBtn">RE-ENGAGE [R]</button>
+    <button class="btn" id="restartBtn" type="button">RE-ENGAGE [R]</button>
     <div class="credits" style="position:relative;margin-top:24px">Preserve coherence at <a href="https://peaice.org" target="_blank">peaice.org</a></div>
   </div>
 </div>
 
-<div id="joystick"><div id="stick"></div></div>
-<div id="fireBtn"></div>
-<div id="aimStick"><div id="aimStickInner"></div></div>
-<div id="weaponBar"><div class="weaponBtn active" id="mb0">1</div><div class="weaponBtn" id="mb1">2</div><div class="weaponBtn" id="mb2">3</div></div>
-
+<div id="joystick" role="group" aria-label="Move"><div id="stick"></div></div>
+<div id="fireBtn" role="button" aria-label="Shoot"></div>
+<div id="aimStick" role="group" aria-label="Aim"><div id="aimStickInner"></div></div>
+<div id="weaponBar"><div class="weaponBtn active" id="mb0" role="button" tabindex="0" aria-label="Truth weapon">1</div><div class="weaponBtn" id="mb1" role="button" tabindex="0" aria-label="Care weapon">2</div><div class="weaponBtn" id="mb2" role="button" tabindex="0" aria-label="Coherence weapon">3</div></div>
+<div id="playChrome">
+  <button type="button" id="pauseBtn" hidden>Pause</button>
+  <button type="button" id="fullBtn" aria-pressed="false">Full screen</button>
+  <a id="fullPageLink" href="./" target="_blank" rel="noopener noreferrer">Open full page</a>
+  <p id="fullNote" hidden></p>
+</div>
+<p id="playHelp" class="sr-only">WASD or arrow keys move. Mouse aims. Space or click shoots. Shift dashes. Keys 1, 2, and 3 change weapons. P or Escape pauses. While playing, those keys do not scroll the page. Pause, finish, or leave the game to scroll.</p>
+<div id="live" class="sr-only" aria-live="polite"></div>
+</div>
 <script>
 (()=>{ 
 const $=id=>document.getElementById(id);
 const canvas=$('game'),ctx=canvas.getContext('2d');
-let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
-function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);}
-addEventListener('resize',resize);resize();
+const stage=$('stage');
+let W=1,H=1,dpr=Math.min(devicePixelRatio||1,2);
+let clampOnResize=()=>{};
+function resize(){
+  const rect=stage.getBoundingClientRect();
+  W=Math.max(1,rect.width);H=Math.max(1,rect.height);
+  const next=Math.min(devicePixelRatio||1,2);
+  const bw=Math.max(1,Math.round(W*next)),bh=Math.max(1,Math.round(H*next));
+  if(canvas.width!==bw||canvas.height!==bh){dpr=next;canvas.width=bw;canvas.height=bh;}
+  else dpr=next;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  clampOnResize();
+}
+addEventListener('resize',resize);
+if(window.visualViewport) visualViewport.addEventListener('resize',resize);
+if(window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+resize();
 
 const weapons=[
  {name:'Truth',color:'#22d3ee',dmg:15,spd:720,cd:0.13,spread:0.06},
@@ -176,29 +242,130 @@ function noise(d=0.2){ensureAudio();if(!audioCtx)return;const b=audioCtx.createB
 let score=0,wave=1,highScore=parseInt(localStorage.getItem('peaiceHS')||'0');
 $('hsTitle').textContent=highScore;
 const keys={},mouse={x:W/2,y:H/2,down:false};
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();keys[' ']=true}if(e.key>='1'&&e.key<='3')setWeapon(+e.key-1);if(e.key==='p')togglePause();if(e.key==='r'&&state!=='playing')startGame();});
-addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.code==='Space')keys[' ']=false});
+let releaseExtra=()=>{};
+const SCROLL_CODES=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','PageUp','PageDown','Home','End','Space']);
+const MOVE_CODES=new Set(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight']);
+const HELD_CODES=new Set([...SCROLL_CODES,...MOVE_CODES]);
+function isControlTarget(e){const t=e.target;return !!(t&&t.closest&&t.closest('button,a,input,textarea,select,[role="button"]'));}
+// Root cause: this document is not a scroll container, so uncancelled arrow, page,
+// home/end, and wheel defaults chain into ancestor frames. Space was already cancelled.
+// WASD have no browser scroll default; they are cancelled during play so they cannot
+// become a scroll or shortcut either. The lock is only on while state is playing.
+addEventListener('keydown',e=>{
+  if(e.isComposing)return;
+  const plain=!e.ctrlKey&&!e.metaKey&&!e.altKey;
+  const playing=state==='playing';
+  if(playing&&plain&&(SCROLL_CODES.has(e.code)||MOVE_CODES.has(e.code))){
+    if(!(e.code==='Space'&&isControlTarget(e))) e.preventDefault();
+  }
+  if(HELD_CODES.has(e.code) && !(e.code==='Space'&&isControlTarget(e))){
+    if(e.key) keys[e.key.toLowerCase()]=true;
+    if(e.code==='Space') keys[' ']=true;
+  }
+  if(e.repeat||!plain) return;
+  if(e.key>='1'&&e.key<='3') setWeapon(+e.key-1);
+  if(e.key==='p'||e.key==='P') togglePause();
+  if((e.key==='r'||e.key==='R')&&state!=='playing') startGame();
+  if(e.key==='Escape'){
+    if(document.fullscreenElement) return;
+    if(state==='playing'||state==='paused'){e.preventDefault();togglePause();}
+  }
+},true);
+addEventListener('keyup',e=>{
+  if(!HELD_CODES.has(e.code)) return;
+  if(e.key) delete keys[e.key.toLowerCase()];
+  if(e.code==='Space') delete keys[' '];
+},true);
+addEventListener('wheel',e=>{if(state==='playing') e.preventDefault();},{capture:true,passive:false});
+addEventListener('touchmove',e=>{if(state==='playing') e.preventDefault();},{capture:true,passive:false});
+addEventListener('mousedown',e=>{if(state==='playing'&&e.button===1) e.preventDefault();},true);
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
-canvas.addEventListener('mousedown',()=>mouse.down=true);addEventListener('mouseup',()=>mouse.down=false);canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('mousedown',()=>mouse.down=true);
+canvas.addEventListener('pointerdown',()=>{if(state==='playing') focusWithoutScroll(stage);});
+addEventListener('mouseup',()=>mouse.down=false);
+addEventListener('pointerup',()=>mouse.down=false);
+addEventListener('pointercancel',()=>mouse.down=false);
+addEventListener('mouseout',e=>{if(!e.relatedTarget) mouse.down=false;});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
 
 const joy={dx:0,dy:0}, joyEl=$('joystick'), stick=$('stick');
 joyEl.addEventListener('touchstart',e=>{e.preventDefault()},{passive:false});
 joyEl.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0],r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=(t.clientX-cx)/38,dy=(t.clientY-cy)/38,m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}joy.dx=dx;joy.dy=dy;stick.style.transform=`translate(${dx*38}px,${dy*38}px)`},{passive:false});
-joyEl.addEventListener('touchend',()=>{joy.dx=joy.dy=0;stick.style.transform='translate(0,0)'});
-const fireBtn=$('fireBtn');fireBtn.addEventListener('touchstart',e=>{e.preventDefault();mouse.down=true});fireBtn.addEventListener('touchend',e=>{e.preventDefault();mouse.down=false});
+function resetJoy(){joy.dx=joy.dy=0;stick.style.transform='translate(0,0)';}
+joyEl.addEventListener('touchend',resetJoy);
+joyEl.addEventListener('touchcancel',resetJoy);
+const fireBtn=$('fireBtn');fireBtn.addEventListener('touchstart',e=>{e.preventDefault();mouse.down=true});fireBtn.addEventListener('touchend',e=>{e.preventDefault();mouse.down=false});fireBtn.addEventListener('touchcancel',e=>{e.preventDefault();mouse.down=false});
+function releaseInputs(){
+  for(const k of Object.keys(keys)) delete keys[k];
+  mouse.down=false;resetJoy();releaseExtra();
+  if(player){player.vx=0;player.vy=0;player.dashT=0;}
+}
 
 let player,bullets=[],eBullets=[],enemies=[],particles=[],powerups=[],boss=null;
 let shots=0,hits=0,damageTaken=0,timeAlive=0,combo=0,comboT=0,bestCombo=0,enemiesToSpawn=0,spawnT=0;
 
 function resetPlayer(){player={x:W/2,y:H/2,vx:0,vy:0,r:14,hp:100,maxHp:100,speed:230,angle:0,dashCd:0,dashT:0,invuln:0,weapon:0,lastShot:0,burst:0,burstT:0,pL2:0,pB:0,shield:0,persist:false,trail:[]};}
 
-function startGame(){ensureAudio();beep(600,0.1);resetPlayer();state='playing';score=0;wave=1;shots=hits=damageTaken=timeAlive=0;combo=comboT=bestCombo=0;bullets=[];eBullets=[];enemies=[];particles=[];powerups=[];boss=null;enemiesToSpawn=8;spawnT=0;$('titleScreen').classList.remove('active');$('gameOverScreen').classList.remove('active');$('pauseScreen').classList.remove('active');setWeapon(0);}
+function ancestorScrollSnapshot(){
+  const saved=[];
+  let w=window;
+  while(w.parent&&w.parent!==w){
+    try{
+      const scroller=w.parent.document.scrollingElement;
+      if(!scroller) break;
+      saved.push([scroller,scroller.scrollTop,scroller.scrollLeft]);
+      w=w.parent;
+    }catch(err){break;}
+  }
+  return saved;
+}
+function restoreAncestorScroll(saved){for(const [el,top,left] of saved){el.scrollTop=top;el.scrollLeft=left;}}
+function focusWithoutScroll(el){
+  if(!el) return;
+  const saved=ancestorScrollSnapshot();
+  el.focus({preventScroll:true});
+  const restore=()=>restoreAncestorScroll(saved);
+  restore();
+  // Ancestor scroll-into-view can be scheduled after preventScroll. Re-pin same-origin parents briefly.
+  let frames=0;
+  const pin=()=>{restore(); if(++frames<6) requestAnimationFrame(pin);};
+  requestAnimationFrame(pin);
+}
+function syncPlayLock(){
+  const lock=state==='playing';
+  document.documentElement.classList.toggle('play-lock',lock);
+  stage.classList.toggle('is-playing',lock);
+  if(lock) stage.tabIndex=0;
+  else stage.removeAttribute('tabindex');
+  const pauseBtn=$('pauseBtn');
+  if(pauseBtn) pauseBtn.hidden=!lock;
+}
+function announce(msg){const n=$('live');if(!n)return;n.textContent='';n.textContent=msg;}
+function startGame(){ensureAudio();beep(600,0.1);releaseInputs();resetPlayer();state='playing';score=0;wave=1;shots=hits=damageTaken=timeAlive=0;combo=comboT=bestCombo=0;bullets=[];eBullets=[];enemies=[];particles=[];powerups=[];boss=null;enemiesToSpawn=8;spawnT=0;$('titleScreen').classList.remove('active');$('gameOverScreen').classList.remove('active');$('pauseScreen').classList.remove('active');setWeapon(0);syncPlayLock();announce('Playing. Arrow keys, WASD, and space stay in the game.');focusWithoutScroll(stage);}
 $('startBtn').onclick=startGame;$('restartBtn').onclick=startGame;
+for(const id of ['startBtn','restartBtn','resumeBtn','pauseBtn','fullBtn']){
+  $(id).addEventListener('mousedown',e=>e.preventDefault());
+}
 
 function setWeapon(i){if(!player)return;player.weapon=i;document.querySelectorAll('.weapon').forEach((el,idx)=>el.classList.toggle('active',idx===i));}
 
-function togglePause(){if(state==='playing'){state='paused';$('pauseScreen').classList.add('active')}else if(state==='paused'){state='playing';$('pauseScreen').classList.remove('active')}}
+function pauseGame(opts={}){
+  if(state!=='playing')return;
+  state='paused';releaseInputs();syncPlayLock();
+  $('pauseScreen').classList.add('active');
+  announce('Paused. Page scrolling is available.');
+  if(opts.returnFocus!==false) focusWithoutScroll($('resumeBtn'));
+}
+function resumeGame(){
+  if(state!=='paused')return;
+  state='playing';syncPlayLock();
+  $('pauseScreen').classList.remove('active');
+  announce('Playing. Movement keys stay in the game.');
+  focusWithoutScroll(stage);
+}
+function togglePause(opts){if(state==='playing')pauseGame(opts);else if(state==='paused')resumeGame();}
 window.togglePause=togglePause;
+$('pauseBtn').addEventListener('click',()=>pauseGame());
 
 function screenShake(m){shakeT=0.35;shakeM=Math.max(shakeM,m)}
 
@@ -213,7 +380,7 @@ function fire(){const w=weapons[player.weapon],now=performance.now()/1000;if(now
 
 function takeDamage(a){if(player.invuln>0||player.dashT>0)return;if(player.shield>0){const s=Math.min(player.shield,a);player.shield-=s;a-=s;addP(player.x,player.y,'#a855f7',10);if(a<=0){screenShake(2);return}}player.hp-=a;damageTaken+=a;player.invuln=0.8;screenShake(7);addP(player.x,player.y,'#ef4444',18,3,180);if(player.hp<=0){if(player.persist){player.persist=false;player.hp=55;player.invuln=2;addP(player.x,player.y,'#10b981',30,4);screenShake(10)}else gameOver()}}
 
-function gameOver(){state='gameover';if(score>highScore){highScore=Math.floor(score);localStorage.setItem('peaiceHS',highScore)}$('finalScore').textContent=Math.floor(score);$('finalWave').textContent=wave;$('finalCombo').textContent=bestCombo;$('finalT').textContent=shots?Math.round(hits/shots*100):100;$('finalHS').textContent=highScore;const preserved=wave>=5||score>=5000;$('endTitle').textContent=preserved?'Coherence Preserved':'Drift Detected';$('endSub').textContent=preserved?'Excellence sustained':'Excellence disrupted';$('gameOverScreen').classList.add('active')}
+function gameOver(){state='gameover';releaseInputs();syncPlayLock();if(score>highScore){highScore=Math.floor(score);localStorage.setItem('peaiceHS',highScore)}$('finalScore').textContent=Math.floor(score);$('finalWave').textContent=wave;$('finalCombo').textContent=bestCombo;$('finalT').textContent=shots?Math.round(hits/shots*100):100;$('finalHS').textContent=highScore;const preserved=wave>=5||score>=5000;$('endTitle').textContent=preserved?'Coherence Preserved':'Drift Detected';$('endSub').textContent=preserved?'Excellence sustained':'Excellence disrupted';$('gameOverScreen').classList.add('active');announce($('endTitle').textContent+'. Page scrolling is available.');focusWithoutScroll($('restartBtn'));}
 
 function spawnEnemy(type){const d=ENEMY[type],edge=(Math.random()*4)|0,m=40;let x,y;if(edge===0){x=Math.random()*W;y=-m}else if(edge===1){x=W+m;y=Math.random()*H}else if(edge===2){x=Math.random()*W;y=H+m}else{x=-m;y=Math.random()*H}enemies.push({type,x,y,vx:0,vy:0,hp:d.hp+wave*4,maxHp:d.hp+wave*4,speed:d.speed*(0.85+Math.random()*0.3),r:d.r,c:d.color,name:d.name,cd:Math.random()*1.5,dashCd:2+Math.random(),dashT:0,score:d.score})}
 function spawnBoss(){const hp=950+wave*90;boss={type:'boss',x:W/2,y:120,vx:0,vy:0,hp,maxHp:hp,r:56,c:'#c026d3',name:'Drift Core',cd:0,phase:1,t:0,score:2000};enemies.push(boss);$('bossBar').classList.add('show')}
@@ -285,7 +452,7 @@ function update(dt){if(state!=='playing')return;timeAlive+=dt;
 
 function drawGrid(t){const s=72;ctx.strokeStyle='rgba(168,85,247,0.07)';ctx.lineWidth=1;ctx.beginPath();for(let x=(t*12)%s;x<W;x+=s){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=(t*8)%s;y<H;y+=s){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();ctx.strokeStyle='rgba(34,211,238,0.05)';ctx.beginPath();ctx.moveTo(0,H*0.5);ctx.lineTo(W,H*0.5);ctx.moveTo(W*0.5,0);ctx.lineTo(W*0.5,H);ctx.stroke()}
 
-function draw(){const t=performance.now()/1000;let ox=0,oy=0;if(shakeT>0){shakeT-=0.016;ox=(Math.random()-0.5)*shakeM*2;oy=(Math.random()-0.5)*shakeM*2;shakeM*=0.9}ctx.save();ctx.translate(ox,oy);
+function draw(){ctx.setTransform(dpr,0,0,dpr,0,0);const t=performance.now()/1000;let ox=0,oy=0;if(shakeT>0){shakeT-=0.016;ox=(Math.random()-0.5)*shakeM*2;oy=(Math.random()-0.5)*shakeM*2;shakeM*=0.9}ctx.save();ctx.translate(ox,oy);
  ctx.fillStyle='#050508';ctx.fillRect(-20,-20,W+40,H+40);drawGrid(t);
  // powerups
  powerups.forEach(p=>{ctx.shadowBlur=18;ctx.shadowColor=POWER[p.t].c;ctx.fillStyle=POWER[p.t].c;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.fillStyle='#000';ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.t,p.x,p.y+1)});
@@ -320,7 +487,8 @@ function loop(ts){const dt=Math.min(0.033,(ts-last)/1000);last=ts;if(state==='pl
 requestAnimationFrame(loop);
 
 // init player for title
-resetPlayer();player.x=W/2;player.y=H/2+80;
+clampOnResize=()=>{if(!player)return;player.x=Math.max(player.r+6,Math.min(W-player.r-6,player.x));player.y=Math.max(player.r+26,Math.min(H-player.r-6,player.y));};
+resetPlayer();player.x=W/2;player.y=Math.max(player.r+26,Math.min(H-player.r-6,H/2+80));
 setInterval(()=>{if(state==='title'){addP(W/2+Math.random()*200-100,H/2+Math.random()*100,'#a855f7',1,1.5,20)}},200);
 
 
@@ -330,14 +498,50 @@ let aimDX=0,aimDY=0;
 if(aimEl){
   aimEl.addEventListener('touchstart',e=>{e.preventDefault();ensureAudio()},{passive:false});
   aimEl.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0],r=aimEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;aimDX=(t.clientX-cx)/50;aimDY=(t.clientY-cy)/50;const m=Math.hypot(aimDX,aimDY);if(m>1){aimDX/=m;aimDY/=m}aimIn.style.transform=`translate(${aimDX*35}px,${aimDY*35}px)`;if(player){mouse.x=player.x+aimDX*200;mouse.y=player.y+aimDY*200}}, {passive:false});
-  aimEl.addEventListener('touchend',()=>{aimDX=aimDY=0;aimIn.style.transform='translate(0,0)'});
+  const resetAim=()=>{aimDX=aimDY=0;aimIn.style.transform='translate(0,0)';};
+  aimEl.addEventListener('touchend',resetAim);
+  aimEl.addEventListener('touchcancel',resetAim);
 }
-document.getElementById('mb0').onclick=()=>{setWeapon(0);updateWBtns()};document.getElementById('mb1').onclick=()=>{setWeapon(1);updateWBtns()};document.getElementById('mb2').onclick=()=>{setWeapon(2);updateWBtns()};
+releaseExtra=()=>{aimDX=aimDY=0;if(aimIn) aimIn.style.transform='translate(0,0)';};
+[0,1,2].forEach(i=>{
+  const el=document.getElementById('mb'+i);
+  el.addEventListener('click',()=>{setWeapon(i);updateWBtns();});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}});
+});
 function updateWBtns(){[0,1,2].forEach(i=>document.getElementById('mb'+i).classList.toggle('active',player&&player.weapon===i))}
 const _setW=setWeapon;setWeapon=function(i){_setW(i);updateWBtns();beep(400,0.05)};
 // ensure audio on first touch
 document.getElementById('fireBtn').addEventListener('touchstart',ensureAudio,{passive:true});
 document.getElementById('joystick').addEventListener('touchstart',ensureAudio,{passive:true});
+
+function onLeave(){releaseInputs();if(state==='playing') pauseGame({returnFocus:false});}
+addEventListener('blur',onLeave);
+document.addEventListener('visibilitychange',()=>{if(document.hidden) onLeave();});
+
+const fullBtn=$('fullBtn'), fullNote=$('fullNote'), fullPageLink=$('fullPageLink');
+if(window.parent===window && document.fullscreenEnabled) fullPageLink.hidden=true;
+function showFullNote(msg){fullNote.hidden=!msg;fullNote.textContent=msg||'';if(msg) announce(msg);}
+async function toggleFullscreen(){
+  try{
+    if(document.fullscreenElement){await document.exitFullscreen();showFullNote('');return;}
+    await stage.requestFullscreen();
+    showFullNote('');
+  }catch(err){
+    fullPageLink.hidden=false;
+    showFullNote('Full screen needs allow="fullscreen" on every ancestor iframe. Open the game in its own tab to play full page.');
+  }
+}
+fullBtn.addEventListener('click',toggleFullscreen);
+document.addEventListener('fullscreenchange',()=>{
+  const on=!!document.fullscreenElement;
+  fullBtn.textContent=on?'Exit full screen':'Full screen';
+  fullBtn.setAttribute('aria-pressed',on?'true':'false');
+  resize();
+});
+
+if(new URLSearchParams(location.search).has('probe')){
+  window.__peaice=()=>({state,x:player?player.x:null,y:player?player.y:null,vx:player?player.vx:0,vy:player?player.vy:0,shots,pressed:Object.keys(keys),lock:document.documentElement.classList.contains('play-lock'),w:W,h:H});
+}
 
 })();</script>
 </body>
