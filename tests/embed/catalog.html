@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Catalog frame</title>
+<style>
+  body{margin:0;background:#10141c;color:#eee;font:16px/1.4 sans-serif}
+  #badge{position:sticky;top:0;z-index:5;background:#fff;color:#111;font:600 14px/1.3 ui-monospace,monospace;padding:6px 8px}
+  #above{height:420px;padding:16px;background:#241c16}
+  #below{height:1600px;padding:16px;background:#18202a}
+  iframe{width:100%;height:540px;border:0;display:block;background:#000}
+</style>
+</head>
+<body>
+<div id="badge">catalog scroll <span id="cs">0</span></div>
+<div id="above">CATALOG ABOVE THE GAME</div>
+<iframe id="game" name="game" title="PEAICE FREE SHOOTER"></iframe>
+<div id="below">CATALOG BELOW THE GAME</div>
+<script>
+const q = new URLSearchParams(location.search);
+const frame = document.getElementById('game');
+frame.style.height = (q.get('gameh') || '540') + 'px';
+if (q.get('allowfs') === '1') {
+  frame.setAttribute('allow', 'fullscreen');
+  frame.setAttribute('allowfullscreen', '');
+}
+frame.src = '/index.html?probe=1';
+const paint = () => { document.getElementById('cs').textContent = String(Math.round(scrollY)); };
+addEventListener('scroll', paint, {passive: true});
+setInterval(paint, 200);
+</script>
+</body>
+</html>
